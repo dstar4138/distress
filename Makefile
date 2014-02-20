@@ -3,7 +3,7 @@
 #
 
 ERL=$(shell which erl)
-OPTS=-Ddebug
+DOPTS=-Ddebug
 REBAR=$(CURDIR)/bin/rebar
 RELDIR=$(CURDIR)/rel
 RELTOOL_CFG=$(CURDIR)/conf/reltool.config
@@ -11,11 +11,13 @@ RELTOOL_CFG=$(CURDIR)/conf/reltool.config
 .PHONY: compile clean distclean release scripts all
 
 ## Compile the Daemon code.
-compile: 
-	$(REBAR) $(OPTS) get-deps compile 
+debug: 
+	$(REBAR) $(DOPTS) get-deps compile 
+compile:
+	$(REBAR) get-deps compile
 
 ## Run the EUnit tests over the Daemon.
-test: compile
+test: debug
 	$(REBAR) eunit
 
 ## Superficial clean of workspace
