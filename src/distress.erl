@@ -20,7 +20,7 @@ start( ConfigFilePath ) ->
     load_config( ConfigFilePath ),
     application:start( distress ).
 
-%% @doc stops a running DISTRESS Service on the running VM.
+%% @doc Stops a running DISTRESS Service on the running VM.
 stop() -> application:stop( distress ).
 
 

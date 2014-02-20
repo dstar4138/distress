@@ -4,6 +4,13 @@
   {vsn, "0.1.0"},
   {registered, [distress]},
   {applications, [kernel, stdlib]},
-  {mod, {distress_app, []}}
+  {mod, {distress_app, []}},
+  {env, [
+        % Override Root Directory for Distress
+        %{root_dir, "~/.config/distress"},
+
+        % Override Database location
+        %{db_loc, "~/.config/distress/db"}
+  ]}
  ]
 }.
