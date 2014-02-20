@@ -9,7 +9,13 @@
 %% General Debuggery
 -include("debug.hrl").
 
--export([handle/5]).
+-export([fun_desc/0, handle/5]).
+
+%% @doc To start a swarm acceptor pool we need a handler function, this 
+%%   function returns that handler function description.
+%% @end  
+fun_desc() -> {?MODULE, handle, []}.
+
 
 %% @doc Start off the Handle loop.
 handle( Socket, _Name, Transport, _Info, Args ) ->

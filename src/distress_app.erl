@@ -21,7 +21,7 @@
 %% @doc Starts off the primary application supervisor.
 start(_StartType, _StartArgs) -> 
     ?DEBUG("Starting DISTRESS Service..."),
-    p2pfs_sup:start_link().
+    distress_sup:start_link().
 
 %% @private
 %% @doc Called by the behaviour right before shutting down.
