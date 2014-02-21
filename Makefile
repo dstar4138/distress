@@ -18,7 +18,7 @@ compile:
 
 ## Run the EUnit tests over the Daemon.
 test: debug
-	$(REBAR) eunit
+	$(REBAR) skip_deps=true eunit
 
 ## Superficial clean of workspace
 clean:
