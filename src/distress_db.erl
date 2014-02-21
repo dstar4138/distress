@@ -88,14 +88,15 @@ select_block( Key ) ->
 delete_block( Key, OID, F ) -> 
     case select_block( Key ) of
         {error, E} -> {error, E};
-        {ok, Value} -> 
+        []         -> ok;
+        Value      -> 
             TestMagic = F( OID, Key, Value ),
             Transaction = fun() ->
                 Q = qlc:q( [ ok || Row <- mnesia:table(t_block),
                                    Row#t_block.key =:= Key,
                                    Row#t_block.magic =:= TestMagic ] ),
                 case qlc:e( Q ) of
-                    [] -> ok; % Failed to match, due to missing or no magic.
+                    [] -> {error,badarg}; % Failed to match, due to missing or no magic.
                     [ ok ] -> % We matched.
                         mnesia:delete({t_block,Key})
                 end
