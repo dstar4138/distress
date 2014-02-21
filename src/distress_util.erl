@@ -3,9 +3,20 @@
 %%% @author Alexander Dean
 -module(distress_util).
 
+-export([uuid/0]).
 -export([clean_path/1,get_rootdir/0]).
 
 -define(DEFAULT_ROOT_DIR, "~/.config/distress").
+
+
+%% @doc Follows RFC4122 for generating UUIDs version 4 via Random Numbers. 
+%% This function will perform fairly slowly as it uses the crypto module,
+%% as apposed to hand running rand:uniform/1. But I feel this is more readable
+%% and we don't actually call uuid/0 frequently. 
+%% @end
+uuid()->
+    <<A:48,B:12,C:62,_:6>>=crypto:rand_bytes(16),
+    <<A:48,4:4,B:12,2:2,C:62>>.
 
 %% @doc Clean a file path for the local OS.
 -spec clean_path( string() ) -> string().
