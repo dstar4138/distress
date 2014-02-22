@@ -1,2 +1,2 @@
 #!/bin/sh
-erl -pa ./ebin ./deps/msgpack/ebin ./deps/erlp2p/ebin ./deps/swarm/ebin
+erl -pa ./ebin ./deps/jsonx/ebin ./deps/erlp2p/ebin ./deps/swarm/ebin
