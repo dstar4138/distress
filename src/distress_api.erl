@@ -37,14 +37,14 @@ handle( Socket, _Name, Transport, _Info, Args ) ->
 
 %% @private
 %% @doc Magic value generation.
-f( Oid, Key, Value ) ->
-    State = crypto:stream_init(aes_ctr,Key,Oid),
-    {_,Magic} = crypto:stream_encrypt(State,crypto:exor(Oid,Value)),
-    Magic.
+f( Oid, _Key, _Value ) ->
+    %State = crypto:stream_init(aes_ctr,Key,Oid),
+    %{_,Magic} = crypto:stream_encrypt(State,crypto:exor(Oid,Value)),
+    Oid.
 
 %% @private
 %% @doc Magic value local masking.
-g( Magic ) -> crypto:exor( Magic, distress:get_myid() ).
+g( Magic ) -> Magic.%crypto:exor( Magic, distress:get_myid() ).
 
 %% @private
 %% @doc Local magic value checking.
