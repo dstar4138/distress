@@ -18,6 +18,7 @@
 -define(E,<<"err">>).
 -define(V,<<"val">>).
 -define(K,<<"key">>).
+-define(G,<<"get">>).
 
 %%%===================================================================
 %%% Messaging API
@@ -30,8 +31,9 @@ decode( Binary ) ->
 
 %% @doc Instead of a single encode function, we have one per message type.
 encode_ack( Oid ) -> jsonx:encode( [{?M,?A},{?O, e_uuid( Oid )}] ).
-encode_err( Err ) -> jsonx:encode( [{?M,?E},{?V, Err}] ).
-encode_get( Key, Block ) -> jsonx:encode( [{?K,Key},{?V,Block}] ).
+encode_err({error,Err}) -> jsonx:encode( [{?M,?E},{?V,Err}] );
+encode_err( Err )       -> jsonx:encode( [{?M,?E},{?V,Err}] ).
+encode_get( Key, Block ) -> jsonx:encode( [{?M,?G},{?K,Key},{?V,Block}] ).
 
 
 %% @doc Get what type of event the message is. 
@@ -42,8 +44,8 @@ get_type( Msg ) when is_list( Msg )-> get_value( Msg, msg ).
 %%   to a binary string to abstract away the message type too.
 %% @end
 get_value( Msg, Key ) -> 
-    Key = erlang:atom_to_binary( Key ),
-    proplists:get_value( Key, Msg, undefined ).
+    BKey = erlang:atom_to_binary( Key, latin1 ),
+    proplists:get_value( BKey, Msg, undefined ).
 
 
 %%%===================================================================
