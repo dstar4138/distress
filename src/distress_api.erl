@@ -69,17 +69,88 @@ handle_loop( {Socket, Transport} = Dat, Args ) ->
 %% @doc Handle each of the API messages and either return to the loop or close
 %%   out.
 %% @end  
-handle_msg( _Msg, Args, Dat ) ->
-    ?DEBUG("TODO: Handle Msg: ~p",[_Msg]), %TODO: Actually handle the API.
-    handle_loop( Dat, Args ).
-
+handle_msg( Msg, Args, Dat ) ->
+    case distress_cmsg:decode( Msg ) of
+        {error,invalid_json,_} -> 
+            send( Dat, distress_cmsg:encode_err(invalid_json) ),
+            handle_loop( Dat, Args );
+        Term -> do( Term, Dat )
+    end.
 
 %%%===================================================================
 %%% Server Side Block API
 %%%===================================================================
 
 %% @hidden
+%% @doc Send the message on the provided socket and transport.
+send( {Socket,Transport}, Msg ) -> Transport:send( Socket, Msg ).
+
+%% @hidden
+%% @doc 
+do( Msg, Dat ) ->
+    case distress_cmsg:get_type( Msg ) of
+        add ->
+            Oid = distress_util:uuid(),
+            send( Dat, distress_cmsg:encode_ack( Oid ) ), 
+            Expires = case distress_cmsg:get_value( Msg, expires ) of
+                undefined -> infinity; E -> clean_expires( E )
+            end,
+            Removable = case distress_cmsg:get_value( Msg, removable ) of
+                undefined -> false; R -> clean_removable( R )
+            end, 
+            handle_add_loop( Oid, Expires, Removable, Dat, [] ); 
+        get -> 
+            case distress_cmsg:get_value( Msg, key ) of
+                undefined -> 
+                    ?DEBUG("Get message missing 'key' value: ~p",[Msg]),
+                    send( Dat, distress_cmsg:encode_err( badarg ) );
+                Key -> do_get( Key, Dat )
+            end;
+        del -> 
+            case distress_cmsg:get_value( Msg, key ) of
+                undefined ->
+                    ?DEBUG("Del message missing 'key' value: ~p",[Msg]),
+                    send( Dat, distress_cmsg:encode_err( badarg ) );
+                Key -> 
+                    (case distress_cmsg:get_value( Msg, oid ) of
+                        undefined ->
+                            ?DEBUG("Del message missing 'oid' value: ~p",[Msg]),
+                            send( Dat, distress_cmsg:encode_err( badarg ) );
+                        Oid -> do_del( Oid, Key, Dat )
+                    end)
+            end;
+        Type -> ?ERROR("Bad message type: ~p",[Type])
+    end.
+
+clean_expires( <<"infinity">> ) -> infinity;
+clean_expires( <<"inf">> ) -> infinity;
+clean_expires( Time ) when is_integer( Time ) andalso Time > 0 -> Time;
+clean_expires( Err ) -> ?ERROR("Bad Expires value: ~p",[Err]).
+clean_removable( true )  -> true;
+clean_removable( false ) -> false;
+clean_removable( Error ) -> ?ERROR("Bad removable value: ~p",[Error]).
+clean_keyval( Msg ) ->
+    case distress_cmsg:get_value( Msg, key ) of
+        undefined ->
+            ?DEBUG("Add_packet message missing 'key' value: ~p",[Msg]),
+            {error,badarg};
+        Key -> 
+            (case distress_cmsg:get_value( Msg, val ) of
+                undefined ->
+                    ?DEBUG("Add_packet message missing 'val' value: ~p",[Msg]),
+                    {error,badarg};
+                Val -> {Key,Val}
+            end)
+    end.
+
+
+%% @hidden
 %% @doc File accessing via a hash value.
+do_get( Key, Dat ) ->
+    case get_block( Key ) of
+        {error, R} -> send( Dat, distress_cmsg:encode_err( R ) );
+        {ok, Val}  -> send( Dat, distress_cmsg:encode_get( Key, Val ) )
+    end.
 get_block( Key ) ->
     case distress_db:select_block( Key ) of
         {error, Reason} -> {error, Reason};
@@ -89,6 +160,19 @@ get_block( Key ) ->
 
 %% @hidden
 %% @doc Handles the add file logic
+handle_add_loop( Oid, Expires, Removable, {Socket, Transport}, Blocks ) -> 
+    case Transport:recv( Socket, 0, infinity ) of
+        {error,closed} -> add_file(Oid, Blocks, Expires, Removable );
+        {ok, Packet} ->
+            case clean_keyval( Packet ) of
+                {error, R} -> 
+                    send( {Socket,Transport}, distress_cmsg:encode_err(R));
+                Pair ->
+                    handle_add_loop( Oid, Expires, Removable, 
+                                     {Socket, Transport}, [Pair|Blocks] )
+            end;
+        {error,R} -> send( {Socket,Transport}, distress_cmsg:encode_err(R))
+    end.
 add_file( Oid, KeyBlockMap, Expires, Removable ) ->
     KeyBlockMagicMap = lists:map(gen_magic(Oid,Removable), KeyBlockMap),
     Results = lists:map(add_file_db(Expires), KeyBlockMagicMap),
@@ -112,7 +196,12 @@ gen_magic( Oid, true ) ->
 
 %% @hidden
 %% @doc Block Removal
-rm_block( Oid, Key ) ->
+do_del( Oid, Key, Dat ) ->
+    case del_block( Oid, Key ) of
+        {error, R} -> send( Dat, distress_cmsg:encode_err( R ) );
+        _ -> ok
+    end.
+del_block( Oid, Key ) ->
     case
        distress_db:delete_block( Key, Oid, fun ?MODULE:composefg/3 )
     of

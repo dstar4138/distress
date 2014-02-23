@@ -37,7 +37,8 @@ encode_get( Key, Block ) -> jsonx:encode( [{?M,?G},{?K,Key},{?V,Block}] ).
 
 
 %% @doc Get what type of event the message is. 
-get_type( Msg ) when is_list( Msg )-> get_value( Msg, msg ).
+get_type( Msg ) when is_list( Msg )-> 
+    catch erlang:binary_to_atom( get_value( Msg, msg ) ).
 
 %% @doc A quick accessor function to abstract away the proplist in case we 
 %%   want to move to maps or structs. Note we convert the key from an atom
