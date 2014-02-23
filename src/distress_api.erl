@@ -71,10 +71,10 @@ handle_loop( {Socket, Transport} = Dat, Args ) ->
 %% @end  
 handle_msg( Msg, Args, Dat ) ->
     case distress_cmsg:decode( Msg ) of
-        {error,invalid_json,_} -> 
+        {error,invalid_json,_} -> %TODO: should replace with invalid message erro 
             send( Dat, distress_cmsg:encode_err(invalid_json) ),
             handle_loop( Dat, Args );
-        Term -> do( Term, Dat )
+        Term -> do( Term, Dat, Args )
     end.
 
 %%%===================================================================
@@ -87,7 +87,7 @@ send( {Socket,Transport}, Msg ) -> Transport:send( Socket, Msg ).
 
 %% @hidden
 %% @doc 
-do( Msg, Dat ) ->
+do( Msg, Dat, Args ) ->
     case distress_cmsg:get_type( Msg ) of
         add ->
             Oid = distress_util:uuid(),
@@ -104,7 +104,8 @@ do( Msg, Dat ) ->
                 undefined -> 
                     ?DEBUG("Get message missing 'key' value: ~p",[Msg]),
                     send( Dat, distress_cmsg:encode_err( badarg ) );
-                Key -> do_get( Key, Dat )
+                Key -> do_get( Key, Dat ),
+                       handle_loop( Dat, Args )
             end;
         del -> 
             case distress_cmsg:get_value( Msg, key ) of
@@ -116,7 +117,8 @@ do( Msg, Dat ) ->
                         undefined ->
                             ?DEBUG("Del message missing 'oid' value: ~p",[Msg]),
                             send( Dat, distress_cmsg:encode_err( badarg ) );
-                        Oid -> do_del( Oid, Key, Dat )
+                        Oid -> do_del( Oid, Key, Dat ),
+                               handle_loop( Dat, Args )
                     end)
             end;
         Type -> ?ERROR("Bad message type: ~p",[Type])
@@ -164,7 +166,8 @@ handle_add_loop( Oid, Expires, Removable, {Socket, Transport}, Blocks ) ->
     case Transport:recv( Socket, 0, infinity ) of
         {error,closed} -> add_file(Oid, Blocks, Expires, Removable );
         {ok, Packet} ->
-            case clean_keyval( Packet ) of
+            Msg = distress_cmsg:decode( Packet ),
+            case clean_keyval( Msg ) of
                 {error, R} -> 
                     send( {Socket,Transport}, distress_cmsg:encode_err(R));
                 Pair ->
@@ -178,7 +181,7 @@ add_file( Oid, KeyBlockMap, Expires, Removable ) ->
     Results = lists:map(add_file_db(Expires), KeyBlockMagicMap),
     %LATER: Broadcast adds into P2P Overlay for replication
     case return_any_errors( Results ) of
-        [] -> ok;
+        [] -> ?DEBUG("Successful adding.");
         Errors -> {error,Errors}
     end.
 add_file_db(Expires) ->
@@ -199,7 +202,7 @@ gen_magic( Oid, true ) ->
 do_del( Oid, Key, Dat ) ->
     case del_block( Oid, Key ) of
         {error, R} -> send( Dat, distress_cmsg:encode_err( R ) );
-        _ -> ok
+        _ -> ?DEBUG("Successful Del of ~p",[Key])
     end.
 del_block( Oid, Key ) ->
     case
