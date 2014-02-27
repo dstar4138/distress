@@ -1,8 +1,12 @@
-# DISTRESS: DISTRIbutEd Secure file System #
+# DISTRESS: DISTRibutEd Secure file System #
 
 For our graduate project in Secure Data Management at the Rochester Institute
 of Technology, we proposed a possible design for a secure collaborative 
-file storage system.
+file storage system. Our system uses strict client side encryption and a 
+receipt based authentication system. This lets DISTRESS lend itself to a 
+diverse range of applications built on top of it, such as: an anonymous 
+dead-drop tool like the New Yorker's StrongBox or a friend-to-friend backup
+service like CrashPlan.
 
 ## Requirements ##
 
