@@ -2,7 +2,7 @@
 
 For our graduate project in Secure Data Management at the Rochester Institute
 of Technology, we proposed a possible design for a secure collaborative 
-file storage system. This is the implementation of the back-end server.
+file storage system.
 
 ## Requirements ##
 
@@ -11,8 +11,8 @@ Right now we have a limited set of requirements on purpose:
 * Erlang VM (version R15B01 or higher)
 * GNUMake or CMake
 
-However DISTRESS is headless and will need a client to connect with it. A 
-python client is currently in development.
+However DISTRESS is headless and will need a client to connect with it. We have
+a python and C++ based client on the way. 
 
 
 ## Building ##
