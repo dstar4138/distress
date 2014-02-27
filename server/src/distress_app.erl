@@ -20,8 +20,10 @@
 %% @private
 %% @doc Starts off the primary application supervisor.
 start(_StartType, _StartArgs) -> 
+    ?DEBUG("Starting Local persistant storage service..."),
+    startup_mnesia(),
     ?DEBUG("Starting DISTRESS Service..."),
-    p2pfs_sup:start_link().
+    distress_sup:start_link().
 
 %% @private
 %% @doc Called by the behaviour right before shutting down.
@@ -31,4 +33,22 @@ prep_stop( _State ) ->
 %% @private
 %% @doc Cleans up the Application state.
 stop(_State) -> ok.
+
+
+%%%===================================================================
+%%% Internal Functionality
+%%%===================================================================
+
+%% @hidden
+%% @doc Starts the Mnesia database based on application environment or the
+%%  starting arguments.
+%% @end
+startup_mnesia() ->
+    SaveDir = case application:get_env(distress, db_loc) of
+                    undefined -> distress_util:get_rootdir()++"/db";
+                    {ok, Dir} -> Dir
+              end,
+    % Will start Mnesia daemon if not running.
+    distress_db:verify_install(
+        distress_util:clean_path(SaveDir)).
 

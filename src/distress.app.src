@@ -1,9 +1,0 @@
-{application, distress,
- [
-  {description, "A Secure Peer-to-Peer File System Daemon"},
-  {vsn, "0.1.0"},
-  {registered, [distress]},
-  {applications, [kernel, stdlib]},
-  {mod, {distress_app, []}}
- ]
-}.

@@ -1,35 +1,24 @@
 #
-# Build for the DISTRESS P2P File System service.
+# Build system for DISTRESS client and service. See subsequent 
+# make files for individual build and tests.
 #
 
-ERL=$(shell which erl)
-OPTS=-Ddebug
-REBAR=$(CURDIR)/bin/rebar
-RELDIR=$(CURDIR)/rel
-RELTOOL_CFG=$(CURDIR)/conf/reltool.config
+CLIENT_DIR=$(CURDIR)/client
+SERVER_DIR=$(CURDIR)/server
 
-.PHONY: compile clean distclean release scripts all
+.PHONY: all build_client build_service test clean
 
-## Compile the Daemon code.
-compile: 
-	$(REBAR) $(OPTS) get-deps compile 
+all: build_server build_client
 
-## Run the EUnit tests over the Daemon.
-test: compile
-	$(REBAR) eunit
+build_client:
+	cd $(CLIENT_DIR) ; echo "Client build not implemented."
 
-## Superficial clean of workspace
+build_server:
+	cd $(SERVER_DIR) ; make compile
+
+test:
+	cd $(SERVER_DIR) ; make test
+
 clean:
-	$(REBAR) clean
-
-## Total whipe of all releases and generated scripts.
-distclean: clean
-	-rm -rf rel
-
-## Build a daemon release.
-release: compile
-	-mkdir $(RELDIR)
-	cd $(RELDIR); $(REBAR) create-node nodeid=distress
-	cp $(RELTOOL_CFG) $(RELDIR)
-	$(REBAR) generate
+	cd $(SERVER_DIR) ; make clean
 

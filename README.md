@@ -1,8 +1,12 @@
-# DISTRESS: DISTRIbutEd Secure file System #
+# DISTRESS: DISTRibutEd Secure file System #
 
 For our graduate project in Secure Data Management at the Rochester Institute
 of Technology, we proposed a possible design for a secure collaborative 
-file storage system. This is the implementation of the back-end server.
+file storage system. Our system uses strict client side encryption and a 
+receipt based authentication system. This lets DISTRESS lend itself to a 
+diverse range of applications built on top of it, such as: an anonymous 
+dead-drop tool like the New Yorker's StrongBox or a friend-to-friend backup
+service like CrashPlan.
 
 ## Requirements ##
 
@@ -11,8 +15,8 @@ Right now we have a limited set of requirements on purpose:
 * Erlang VM (version R15B01 or higher)
 * GNUMake or CMake
 
-However DISTRESS is headless and will need a client to connect with it. A 
-python client is currently in development.
+However DISTRESS is headless and will need a client to connect with it. We have
+a python and C++ based client on the way. 
 
 
 ## Building ##

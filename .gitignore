@@ -1,0 +1,7 @@
+.eunit
+deps
+ebin
+*.o
+*.plt
+*.swp
+erl_crash.dump
