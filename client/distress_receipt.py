@@ -56,25 +56,26 @@ class Library(object):
         if not path.exists( self.__path ):
             with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) \
                 as ref: 
-                    ref.comment = LIBRARY_REFERENCE
-                    ref.writestr(META_FILE, b'')
+                    ref.comment = Library.LIBRARY_REFERENCE
+                    ref.writestr(Library.META_FILE, b'')
         else:
             valid = False
             with ZipFile( self.__path, mode='r', compression=ZIP_DEFLATED ) \
                 as ref: 
-                    valid = (ref.comment == LIBRARY_REFERENCE) and \
-                            (META_FILE   in ref.namelist()   )
+                    valid = (ref.comment == Library.LIBRARY_REFERENCE) and \
+                            (Library.META_FILE in ref.namelist())
             if not valid: raise RuntimeError("Invalid Library File")
 
     def get_names(self):
         """ List all files stored in the library. It does so by looking up
          all the hash files stored. Useful for quick checking if a file exists.
         """
+        global HASH_EXT
         names = []
         with ZipFile( self.__path, mode='r', compression=ZIP_DEFLATED ) as ref:
             names = [ path.splitext( f )[0]     \
                         for f in ref.namelist() \
-                            if not f.endswith( HASH_EXT ) \
+                            if f.endswith( HASH_EXT ) \
                     ]
         return names
 
@@ -84,20 +85,20 @@ class Library(object):
             ids={}
             for line in data.decode("utf-8").split():
                 i,*m=line.split(',')
-                ids[i]=dict(zip(META_NAMES,m))
+                ids[i]=dict(zip(Library.META_NAMES,m))
             return ids
              
         idmap={}
         with ZipFile( self.__path, mode='r', compression=ZIP_DEFLATED ) as ref:
             dat = b''
-            with ref.open(META_FILE) as meta: dat = meta.read()
+            with ref.open(Library.META_FILE) as meta: dat = meta.read()
             idmap=parse_meta(dat)
         return idmap
 
     def list(self):            
         """ Returns a map of IDs to their filenames. """
         ids=self.meta()
-        for ida,meta in ids.iteritems():
+        for ida,meta in ids.items():
             ids[ida] = meta['name']
         return ids
  
