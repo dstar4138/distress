@@ -18,7 +18,7 @@ def addblock( Key, Value ):
                          'val' : Value } )
 
 
-def del( Oid, Key ):
+def delete( Oid, Key ):
     return json.dumps( { 'msg' : 'del', 
                          'key' : Key,
                          'oid' : Oid } )
