@@ -84,8 +84,8 @@ class Library(object):
         def parse_meta( data ):
             ids={}
             for line in data.decode("utf-8").split():
-                i,*m=line.split(',')
-                ids[i]=dict(zip(Library.META_NAMES,m))
+                s = line.split(',')
+                ids[splits[0]]=dict(zip(Library.META_NAMES,splits[1:]))
             return ids
              
         idmap={}
