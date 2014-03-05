@@ -11,14 +11,14 @@ SERVER_DIR=$(CURDIR)/server
 all: build_server build_client
 
 build_client:
-	cd $(CLIENT_DIR) ; echo "Client build not implemented."
+	@cd $(CLIENT_DIR) ; echo "Client build not implemented."
 
 build_server:
-	cd $(SERVER_DIR) ; make compile
+	@cd $(SERVER_DIR) ; make compile
 
 test:
-	cd $(SERVER_DIR) ; make test
+	@cd $(SERVER_DIR) ; make test
 
 clean:
-	cd $(SERVER_DIR) ; make clean
+	@cd $(SERVER_DIR) ; make clean
 

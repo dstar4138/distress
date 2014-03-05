@@ -55,7 +55,7 @@ get_value( Msg, Key ) ->
 
 %% @hidden
 %% @doc Check if there is a uuid which needs decoding.
-secondary_decode( {error, _, _ } = Err ) -> Err;
+secondary_decode( {error, Err, _ } ) -> {error, Err};
 secondary_decode( Msg ) ->
     case get_value( Msg, oid ) of
         undefined -> Msg;
