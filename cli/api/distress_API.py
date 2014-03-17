@@ -32,9 +32,9 @@ def encrypt_file(file, key):
 
 	packet = list(zip(plaintext_hashes_shuffled,encrypted_blocks))
 
-	oid = send(TEST_SOCKET,packet)
+	oid =__send(TEST_SOCKET,packet)
 	#make_receipt(oid, key, plaintext_hashes, order, masks = 0)
-	return [packet, oid, plaintext_hashes]
+	return [oid, plaintext_hashes]
 
 def __chunk(file_path):
 	"""
@@ -105,7 +105,7 @@ def __hash_shuffle(list):
 	return list
 
 
-def send(socket, packet):
+def __send(socket, packet):
 	"""
 	Send the encrypted hashes with their respective blocks to the
 	network, and returns the OID that provides proof of ownership.
@@ -125,6 +125,7 @@ def send(socket, packet):
 	
 	# send the key/value pairs for each chunk
 	for chunk in packet:
+		assert ( len(chunk[1]) == CHUNK_SIZE)
 		send_message = distress_cmsg.addblock(chunk[0],chunk[1])
 		socket.send(send_message.encode())
 

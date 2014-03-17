@@ -13,7 +13,7 @@ import uuid
 from docopt import docopt
 from socket import socket
 
-from api.distress_API     import distress_API
+import api.distress_API as distress_API
 from api.distress_receipt import Receipt
 from api.distress_receipt import Library
 from ext.configobj        import ConfigObj
@@ -34,14 +34,12 @@ if __name__ == '__main__':
                    options_first=False)
     
     try:
-        key         = uuid.uuid4 ()
-        packet, oid, hashes = distress_API.encrypt (args['<filepath>'], key)
+        key         = "abcdefghijklmnop"
+        oid, hashes = distress_API.encrypt_file (args['<filepath>'], key)
         salts       = create_salts (hashes)
-        receipt     = library.make_receipt (config["library"]["dir"] + key + ".rcpt",
-                                            hashes,
-                                            salts,
-                                            oid,
-                                            key)
+        receipt     = library.make_receipt(config["library"]["dir"] + key + ".rcpt",
+                                            hashes, salts, oid, key)
+
     except IOError as err:
         print "Error: file '" + args['<filepath>'] + "' is not readable"
 
