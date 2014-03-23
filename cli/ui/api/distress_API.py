@@ -16,25 +16,32 @@ from Crypto.Hash import SHA384
 from Crypto.Random import random
 
 CHUNK_SIZE = 512
-TEST_SOCKET = socket.socket()
-TEST_SOCKET.connect(('127.0.0.1', 65501))
 
-def encrypt_file(file, key):
+def encrypt_file(socket, library, filename, key):
 	""" 
 	Encrypts the file using key. 
 	"""
-	blocks = __chunk(file)
-	plaintext_hashes = [__SHA384(b) for b in blocks]
-	order = [i for i in range(len(blocks))]
+	# 1) Chunk up the file into equal sized blocks
+	blocks = __chunk(filename)
 
-	encrypted_blocks = [__encrypt(block,key) for block in blocks]
+    # 2) Record the block's order and make random masks
+	order = [i for i in range(len(blocks))] #TODO: Do we need? Python maintains list order
+	masks = [os.urandom(CHUNK_SIZE) for _ in blocks] 
+
+    # 3) Encrypt each block using the key and masks
+	encrypted_blocks = [__encrypt(b,m,key) for b,m in zip(blocks,masks)]
+ 
+	# 4) Get the Hash of each block, and shuffle them.
+	plaintext_hashes = [__SHA384(b) for b in blocks]
 	plaintext_hashes_shuffled = __hash_shuffle(plaintext_hashes)
 
+    # 5) Send the encrypted blocks with a random plaintext hash as it's key.
 	packet = list(zip(plaintext_hashes_shuffled,encrypted_blocks))
+	oid = __send_add(socket, packet)
 
-	oid =__send(TEST_SOCKET,packet)
-	#make_receipt(oid, key, plaintext_hashes, order, masks = 0)
-	return [oid, plaintext_hashes]
+	# 6) Using the returned Owner ID, save the hashes and key in a Receipt.
+	return library.make_receipt( filename, plaintext_hashes, masks, oid, key )
+
 
 def __chunk(file_path):
 	"""
@@ -47,7 +54,6 @@ def __chunk(file_path):
 	num_chunks = int(num_chunks)
 	
 	object_file = open(file_path, 'rb')
-
 	chunks = []
 	for i in range(num_chunks):
 		chunks.append(object_file.read(CHUNK_SIZE))
@@ -65,22 +71,25 @@ def __SHA384(object):
 	return object_hash.hexdigest()
 
 
-def __encrypt(block, key):
+def __encrypt(block, mask, key):
 	"""
 	Encrypts the block using AES scheme and key.
 	"""
-	# TODO:	Salting
 
 	# Add padding if neccesary 
-	padding = AES.block_size - len(block) % AES.block_size
-	if padding == AES.block_size:
-		padding = 0
-	block += (bytes(1) * padding)
-	# encrypt a single block chunk
+	#padding = AES.block_size - len(block) % AES.block_size
+	#if padding == AES.block_size:
+	#	padding = 0
+	#block += (bytes(1) * padding)
+	# encrypt a single block chunki
+	def sxor(b,m): # String XOR
+	    def o(x): return ord(x) if x is not None else 0
+	    return ''.join(chr(o(x)^o(y)) for x,y in map(None,b,m))
 
 	myCipher = AES.new(key)
-	encrypted_block = myCipher.encrypt(block)
-	return base64.b64encode(encrypted_block)
+	encrypted_block = myCipher.encrypt(sxor(block,mask))
+	return encrypted_block
+#	return base64.b64encode(encrypted_block)
 
 def __decrypt(block, key):
 	"""
@@ -105,16 +114,16 @@ def __hash_shuffle(list):
 	return list
 
 
-def __send(socket, packet):
+def __send_add(socket, packet, expires="infinity", removable=False):
 	"""
 	Send the encrypted hashes with their respective blocks to the
 	network, and returns the OID that provides proof of ownership.
 	"""
-
+	global CHUNK_SIZE
 	num_blocks = len(packet)
-	removeable = False
 
-	add_message = distress_cmsg.add(num_blocks, 'infinity', removeable)
+    # Send notification of block adds.
+	add_message = distress_cmsg.add(num_blocks, expires, removable)
 	socket.send(add_message.encode())
 
 	# OID shouldn't be larger than 64, right?
@@ -125,9 +134,9 @@ def __send(socket, packet):
 	
 	# send the key/value pairs for each chunk
 	for chunk in packet:
-		assert ( len(chunk[1]) == CHUNK_SIZE)
+		assert ( len(chunk[1]) == CHUNK_SIZE )
 		send_message = distress_cmsg.addblock(chunk[0],chunk[1])
-		socket.send(send_message.encode())
+		socket.send( send_message )
 
 	return oid
 
@@ -201,6 +210,8 @@ def delete(socket, receipt):
 
 	return
 
-
-# encrypt_file('C:\\test_file.txt','abcdefghijklmnop')
-# encrypt_file('/home/john/test_file.txt','abcdefghijklmnop')
+# TEST_SOCKET = socket.socket()
+# TEST_SOCKET.connect(('127.0.0.1', 65501))
+# lib = getlib()
+# encrypt_file(TEST_SOCKET, lib,'C:\\test_file.txt','abcdefghijklmnop')
+# encrypt_file(TEST_SOCKET, lib, '/home/john/test_file.txt','abcdefghijklmnop')

@@ -103,8 +103,8 @@ class Library(object):
     """ An encrypted zip file which holds a set of receipts. """
     LIBRARY_REFERENCE = b'DISTRESSLIBv1'
 
-    def __init__(self, path, password=None):
-        self.__path = path
+    def __init__(self, libpath, password=None):
+        self.__path = path.expanduser( libpath )
         self.__password = password
         self.__verify()
 

@@ -22,7 +22,7 @@ def addblock( Key, Value ):
     assert( len(Key) == HASHSIZE )
     assert( type(Value) is bytes )
     assert( len(Value) == BLOCKSIZE )
-    Value64 = str( base64.b64encode( Value ), "ascii" )
+    Value64 = base64.b64encode( Value )
     return json.dumps( { 'key' : Key,'val' : Value64 } )
 
 def delblock( Oid, Key ):
