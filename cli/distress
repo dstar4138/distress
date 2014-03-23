@@ -15,13 +15,18 @@ See 'distress <command> --help' for more information on a specific command.
 """
 
 import sys
+from os import sep as OSSEP
 from subprocess import call
-from ext.docopt import docopt
+from ui.ext.docopt import docopt
 
 __version__='v0.1.0'
 
 ## Force usage of python 2.* 
 PYTHON_EXEC='python2'
+
+## Command extention and directory
+CMD_EXT='.py'
+CMD_DIR='ui' + OSSEP
 
 if __name__ == '__main__':
 
@@ -30,13 +35,13 @@ if __name__ == '__main__':
                    options_first=True)
 
     argv = [args['<command>']] + args['<args>']
-    dmod =  args['<command>']  + '.py'
+    dmod = CMD_DIR + args['<command>'] + CMD_EXT
 
     try:
         with open (dmod, "r") as _: pass # does command exist?
 
         exit (call ([PYTHON_EXEC, dmod] + argv))
     except IOError as err:
-        exit("%r is not a valid command. See 'distress help'." % 
+        exit("%r is not a valid command. See '%s help'." %
                                             (args['<command>'], sys.argv[0]))
 
