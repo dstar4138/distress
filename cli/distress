@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 """
 usage: distress <command> [<args>...]
 
@@ -14,57 +14,29 @@ The most commonly used commands are:
 See 'distress <command> --help' for more information on a specific command.
 """
 
-
-
-"""
-usage: git [--version] [--exec-path=<path>] [--html-path]
-           [-p|--paginate|--no-pager] [--no-replace-objects]
-           [--bare] [--git-dir=<path>] [--work-tree=<path>]
-           [-c <name>=<value>] [--help]
-           <command> [<args>...]
-
-options:
-   -c <name=value>
-   -h, --help
-   -p, --paginate
-
-The most commonly used git commands are:
-   add        Add file contents to the index
-   branch     List, create, or delete branches
-   checkout   Checkout a branch or paths to the working tree
-   clone      Clone a repository into a new directory
-   commit     Record changes to the repository
-   push       Update remote refs along with associated objects
-   remote     Manage set of tracked repositories
-
-See 'git help <command>' for more information on a specific command.
-
-"""
+import sys
 from subprocess import call
-from docopt     import docopt
+from ext.docopt import docopt
 
+__version__='v0.1.0'
+
+## Force usage of python 2.* 
+PYTHON_EXEC='python2'
 
 if __name__ == '__main__':
 
     args = docopt (__doc__,
-                   version='distress 0.1',
+                   version=__version__,
                    options_first=True)
 
     argv = [args['<command>']] + args['<args>']
     dmod =  args['<command>']  + '.py'
 
     try:
-        fi = open (dmod, "r")
-         # does command exist?
+        with open (dmod, "r") as _: pass # does command exist?
 
-        exit (call (['python', dmod] + argv))
+        exit (call ([PYTHON_EXEC, dmod] + argv))
     except IOError as err:
-        exit("%r is not a valid command. See 'distress help'." % args['<command>'])
-        
-
-
-
-
-
-
+        exit("%r is not a valid command. See 'distress help'." % 
+                                            (args['<command>'], sys.argv[0]))
 
