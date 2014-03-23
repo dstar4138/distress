@@ -37,6 +37,6 @@ def list_( socket, args, config, library, cmd=False ):
             printmeta( ida, meta, pp )
             
 if __name__ == '__main__':
-    (socket, args, config, library) = build_cmd_args( __doc__ ) 
+    (socket, args, config, library) = build_cmd_args( __doc__, conn=False ) 
     list_( socket, args, config, library, cmd=True )
 

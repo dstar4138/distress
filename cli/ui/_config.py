@@ -23,7 +23,7 @@ DEFAULT_CONFIGSPEC =                         \
             { 'key' : '' }                   \
     }
 
-def build_cmd_args( doc ):
+def build_cmd_args( doc, conn=True ):
     """ Build a common argument tuple that is used in almost all of the
     distress interactive commands. Namely, this will return a socket
     connected to the host distress node, the command arguments, the
@@ -33,8 +33,9 @@ def build_cmd_args( doc ):
     config = getconfig()
     library = getlib()
     sock = socket()
-    sock.connect( (config['network']['hostip'],
-                   int(config['network']['hostport'])) )
+    if conn:
+        sock.connect( (config['network']['hostip'],
+                      int(config['network']['hostport'])) )
     return (sock, args, config, library)
 
 def getargs( doc, **kwargs ):
