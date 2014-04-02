@@ -143,7 +143,7 @@ def __send_add(socket, packet, expires="infinity", removable=False):
 
 	return oid
 
-def recieve(socket, receipt, download_directory):
+def recieve(socket, receipt, file_location):
 	"""
 	Fetches and writes the file described in receipt. File file_location
 	will be download_directory, and the file will be decrypted if possible.
@@ -158,9 +158,6 @@ def recieve(socket, receipt, download_directory):
 
 	hashes = receipt.get_hashs()
 	salts = receipt.get_salts()
-
-	# TODO: Find a way to get file name from the receipt
-	file_location = download_directory + 'test-file.txt'
 
 	with open(file_location,'w') as out_file:
 		for i in range(len(hashes)):
