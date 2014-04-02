@@ -14,11 +14,11 @@ from api.distress_API import recieve
 
 def get(socket, args, config, library, cmd=False):
     """ Handles user input to get a file from the distress network. """
-    
+
     nameid = args['<nameid>']
     receipt = library.get_receipt( nameid )
     if receipt is None:
-        raise Exception "Receipt does not exist for that name or id."
+        raise Exception("Receipt does not exist for that name or id.")
 
     # Use the overrided store path.
     path = receipt.get_filename()
@@ -33,7 +33,7 @@ def get(socket, args, config, library, cmd=False):
             print "Downloaded and Decrypted!"
         else:
             print "File downloaded, but you are missing read access."
-    except Exception e:
+    except Exception as e:
         print e
    
     # We broke out of the recieve block, so it must have been an error

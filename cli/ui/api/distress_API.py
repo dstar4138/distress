@@ -91,20 +91,20 @@ def __encrypt(block, mask, key):
 	myCipher = AES.new(key)
 	encrypted_block = myCipher.encrypt(sxor(block,mask))
 	return encrypted_block
-#	return base64.b64encode(encrypted_block)
 
-def __decrypt(block, key):
+def __decrypt(block, mask, key):
 	"""
 	Decrypts the block using AES scheme and key.
 	"""
 	# TODO: Add salting
 
-	block = base64.b64decode(block)
 	decr = AES.new(key)
 	value = decr.decrypt(block)
-	
-	# find a better way to pad
-	return value.rstrip('1')
+	def sxor(b,m): # String XOR
+	    def o(x): return ord(x) if x is not None else 0
+	    return ''.join(chr(o(x)^o(y)) for x,y in map(None,b,m))
+
+	return sxor( value, mask ).rstrip('\0')
 
 
 def __hash_shuffle(list):
@@ -164,16 +164,20 @@ def recieve(socket, receipt, file_location):
 			# Get the block
 			current_key = hashes[i]
 
-			block_request = distress_cmsg.get(current_key)
+			block_request = distress_cmsg.getblock(current_key)
 
 			socket.send(block_request)
-			value = distress_cmsg.decode(socket.recv(CHUNK_SIZE))['val']
+			value = distress_cmsg.decode(socket.recv(CHUNK_SIZE*2))['val']
+		
+			if value == 'missing':
+				raise Exception('The chunk was not in the network!')
 
-			print(value)
+			value = base64.b64decode(value)
+			#print(value)
+
 			# Decrypt if possible
 			if read_access:
-				# TODO: Add a salt to decrypt
-				value = __decrypt(value, key)
+				value = __decrypt(value, salts[i], key)
 
 			out_file.write(value)
 
