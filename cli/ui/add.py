@@ -57,11 +57,11 @@ def add(socket, args, config, library, cmd=False):
                 else: ret.append( receipt )
             except IOError as err:
                 print "Error: file '" + filename + "' is not readable"
-
+		print err
     except Exception as e: print e
 
     # Return set of receipts if called via shell
-    if cmd: return ret
+    if not cmd: return ret
 
 
 ## If run by command-line, we generate config and grab arguments

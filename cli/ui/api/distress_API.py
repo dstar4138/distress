@@ -8,6 +8,8 @@ import binascii
 import json
 import distress_cmsg
 import distress_receipt
+import time
+
 
 # REQUIRES PyCrypto 2.6 or later
 # PyCrypto can be found at https://www.dlitz.net/software/pycrypto/
@@ -136,6 +138,7 @@ def __send_add(socket, packet, expires="infinity", removable=False):
 	for chunk in packet:
 		assert ( len(chunk[1]) == CHUNK_SIZE )
 		send_message = distress_cmsg.addblock(chunk[0],chunk[1])
+		time.sleep(0.1)
 		socket.send( send_message )
 
 	return oid
