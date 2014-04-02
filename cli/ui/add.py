@@ -50,6 +50,10 @@ def add(socket, args, config, library, cmd=False):
         files = determine_filepaths( args )
         key = determine_key( args, config )
 
+        if key == '':
+            print 'No key found: first run ./distress config global.key <key>'
+            return ret
+
         for filename in files:
             try:
                 receipt = encrypt_file(socket, library, filename, key)
@@ -57,11 +61,11 @@ def add(socket, args, config, library, cmd=False):
                 else: ret.append( receipt )
             except IOError as err:
                 print "Error: file '" + filename + "' is not readable"
-		print err
+
     except Exception as e: print e
 
     # Return set of receipts if called via shell
-    if not cmd: return ret
+    if cmd: return ret
 
 
 ## If run by command-line, we generate config and grab arguments
