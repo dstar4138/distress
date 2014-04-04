@@ -158,7 +158,8 @@ handle_msg_add_block( Packet, Dat, State ) ->
         {error, R} -> 
             send( Dat, distress_cmsg:encode_err(R));
         Pair ->
-            add_block( Pair, State )
+            add_block( Pair, State ),
+            send( Dat, distress_cmsg:encode_scs() )
     end.
 add_block( {Key, Block} = BlockPair, {Magic, Expires} ) ->
     {MyMagic, _Pass} = Magic( BlockPair ),
@@ -215,6 +216,8 @@ clean_del( Msg ) ->
 %% @hidden
 %% @doc Clean the block messages in a add-block mode. See 
 %%  handle_loop_add_block/3. 
+clean_keyval( {error, _Err} = Err) ->
+    ?DEBUG( "Add_packet message invalid: ~p",[_Err] ), Err;
 clean_keyval( Msg ) ->
     case distress_cmsg:get_value( Msg, key ) of
         undefined ->

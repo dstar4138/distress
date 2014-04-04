@@ -7,7 +7,7 @@
 -module( distress_cmsg ).
 
 -export([decode/1]).
--export([encode_ack/1,encode_err/1,encode_get/2]).
+-export([encode_ack/1,encode_err/1,encode_get/2,encode_scs/0]).
 -export([get_type/1, get_value/2]).
 
 % We want a proplist back rather than a stuct or eep18.
@@ -19,6 +19,7 @@
 -define(V,<<"val">>).
 -define(K,<<"key">>).
 -define(G,<<"get">>).
+-define(S,<<"scs">>).
 
 %%%===================================================================
 %%% Messaging API
@@ -34,7 +35,7 @@ encode_ack( Oid ) -> jsonx:encode( [{?M,?A},{?O, e_uuid( Oid )}] ).
 encode_err({error,Err}) -> jsonx:encode( [{?M,?E},{?V,Err}] );
 encode_err( Err )       -> jsonx:encode( [{?M,?E},{?V,Err}] ).
 encode_get( Key, Block ) -> jsonx:encode( [{?M,?G},{?K,Key},{?V,Block}] ).
-
+encode_scs() -> jsonx:encode( [{?M,?S}] ).
 
 %% @doc Get what type of event the message is. 
 get_type( Msg ) when is_list( Msg )-> 

@@ -27,23 +27,49 @@ def encrypt_file(socket, library, filename, key):
 	blocks = __chunk(filename)
 
     # 2) Record the block's order and make random masks
-	order = [i for i in range(len(blocks))] #TODO: Do we need? Python maintains list order
 	masks = [os.urandom(CHUNK_SIZE) for _ in blocks] 
 
     # 3) Encrypt each block using the key and masks
 	encrypted_blocks = [__encrypt(b,m,key) for b,m in zip(blocks,masks)]
  
-	# 4) Get the Hash of each block, and shuffle them.
+	# 4) Get the Hash of each block, and shuffle them. 
 	plaintext_hashes = [__SHA384(b) for b in blocks]
-	plaintext_hashes_shuffled = __hash_shuffle(plaintext_hashes)
+	encrypted_hashes = [__SHA384(b) for b in encrypted_blocks]
+	plaintext_hashes_shuffled = list( plaintext_hashes ) #make copy.
+	random.shuffle( plaintext_hashes_shuffled )
+
+	# 4b) At this point we consolidate the encrypted blocks if there are
+	#     duplicate plaintext hashes. This is rare!
+	packet, masks = __purify( plaintext_hashes, 
+ 								plaintext_hashes_shuffled,
+ 								encrypted_blocks, 
+ 								masks )
 
     # 5) Send the encrypted blocks with a random plaintext hash as it's key.
-	packet = list(zip(plaintext_hashes_shuffled,encrypted_blocks))
 	oid = __send_add(socket, packet)
 
 	# 6) Using the returned Owner ID, save the hashes and key in a Receipt.
-	return library.make_receipt( filename, plaintext_hashes, masks, oid, key )
+	#    The shuffled hashes still designate order of the encrypted blocks on
+	#    our side.
+	return library.make_receipt( filename, plaintext_hashes_shuffled, 
+									masks, oid, key )
+	
 
+def __purify(pths, spths, blocks, masks):
+	"""
+	Returns the packet to send to DISTRESS and an updated list of masks which
+	overrides the duplicate values. This does two things, it first reduces the
+	number of blocks stored on the network, but it also makes sure the masks
+	are aligned with the shuffled location.
+	"""
+	seen,packet,nl = {}, [], []
+	keyvals = zip(spths,blocks)
+	for pth,kv,m in zip(pths,keyvals,masks):
+	 	if not pth in seen: 
+	 		seen[pth] = m
+			packet.append( kv )
+		nl.append( seen[pth] )
+	return packet,nl
 
 def __chunk(file_path):
 	"""
@@ -77,44 +103,27 @@ def __encrypt(block, mask, key):
 	"""
 	Encrypts the block using AES scheme and key.
 	"""
-
-	# Add padding if neccesary 
-	#padding = AES.block_size - len(block) % AES.block_size
-	#if padding == AES.block_size:
-	#	padding = 0
-	#block += (bytes(1) * padding)
-	# encrypt a single block chunki
-	def sxor(b,m): # String XOR
+	def sxor(b,m): # String XOR, adds NULL padding if needed.
 	    def o(x): return ord(x) if x is not None else 0
 	    return ''.join(chr(o(x)^o(y)) for x,y in map(None,b,m))
 
 	myCipher = AES.new(key)
-	encrypted_block = myCipher.encrypt(sxor(block,mask))
+	padded_block = sxor(block,mask)
+	encrypted_block = myCipher.encrypt(padded_block)
 	return encrypted_block
 
 def __decrypt(block, mask, key):
 	"""
 	Decrypts the block using AES scheme and key.
 	"""
-	# TODO: Add salting
-
-	decr = AES.new(key)
-	value = decr.decrypt(block)
 	def sxor(b,m): # String XOR
 	    def o(x): return ord(x) if x is not None else 0
 	    return ''.join(chr(o(x)^o(y)) for x,y in map(None,b,m))
 
-	return sxor( value, mask ).rstrip('\0')
-
-
-def __hash_shuffle(list):
-	"""
-	Returns a shuffled list of hashes. Uses the cryptographically
-	secure shuffle from PyCrypto. 
-	"""
-	random.shuffle(list)
-	return list
-
+	decr = AES.new(key)
+	masked_value = decr.decrypt(block)
+	padded_value = sxor( masked_value, mask ) ## possibly padded.
+	return padded_value.rstrip('\0')
 
 def __send_add(socket, packet, expires="infinity", removable=False):
 	"""
@@ -135,11 +144,14 @@ def __send_add(socket, packet, expires="infinity", removable=False):
 	oid = response['oid']
 	
 	# send the key/value pairs for each chunk
-	for chunk in packet:
-		assert ( len(chunk[1]) == CHUNK_SIZE )
-		send_message = distress_cmsg.addblock(chunk[0],chunk[1])
-		time.sleep(0.1)
+	for key,chunk in packet:
+		assert ( len(chunk) == CHUNK_SIZE )
+		block = base64.b64encode( chunk )
+		send_message = distress_cmsg.addblock(key,block)
+		print "send:", send_message
 		socket.send( send_message )
+        msg = socket.recv(13) #wait for response, we can ignore if error.
+        print "\trecv:", msg
 
 	return oid
 
@@ -168,16 +180,14 @@ def recieve(socket, receipt, file_location):
 
 			socket.send(block_request)
 			value = distress_cmsg.decode(socket.recv(CHUNK_SIZE*2))['val']
-		
+                		
 			if value == 'missing':
 				raise Exception('The chunk was not in the network!')
-
-			value = base64.b64decode(value)
-			#print(value)
-
+			else:
+				value = base64.b64decode(value)
+			
 			# Decrypt if possible
-			if read_access:
-				value = __decrypt(value, salts[i], key)
+			if read_access: value = __decrypt(value, salts[i], key)
 
 			out_file.write(value)
 

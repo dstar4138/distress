@@ -1,10 +1,10 @@
 ##
 ## DISTRESS Messaging wrapper
 ##
-import json, base64
+import json
 
 HASHSIZE = 96 # 384 bits / 4 bit chars = 96, since SHA384 returns str.
-BLOCKSIZE = 512 # In bytes.
+BLOCKSIZE = 684 # 512 in bytes, but base64 encoded.
 
 def add( NumBlocks, Expires="infinity", Removable=False ):
     assert( type(NumBlocks) is int )
@@ -20,10 +20,9 @@ def add( NumBlocks, Expires="infinity", Removable=False ):
 def addblock( Key, Value ):
     assert( type(Key) is str )
     assert( len(Key) == HASHSIZE )
-    assert( type(Value) is bytes )
+    assert( type(Value) is str )
     assert( len(Value) == BLOCKSIZE )
-    Value64 = base64.b64encode( Value )
-    return json.dumps( { 'key' : Key,'val' : Value64 } )
+    return json.dumps( { 'key' : Key, 'val' : Value } )
 
 def delblock( Oid, Key ):
     assert( type(Oid) is str )
