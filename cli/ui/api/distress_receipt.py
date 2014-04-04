@@ -3,6 +3,7 @@
 ##
 import time
 import shutil
+import base64
 import tempfile
 from os import path
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
@@ -35,9 +36,10 @@ def load_receipt_file( path, lock=None ):
         hashs = [f for f in files if f.filename.endswith(HASH_EXT)]
         if oid: self.__oid = ref.read(oid[0],lock)
         if key:
-            tmp = ref.open(key[0],'r',lock)
-            self.__key = tmp.readline()
-            self.__salts = tmp.read().split()
+            with ref.open(key[0],'r',lock) as tmp:
+                self.__key = tmp.readline().strip()
+                while tmp.peek(): self.__salts.append( tmp.readline().strip() )
+            self.__salts=map(base64.b64decode,self.__salts)
         if hashs: self.__hashs = ref.read(hashs[0],lock).split()
         else: ret = False
     return ret
@@ -93,7 +95,8 @@ class Receipt(object):
             if removable and self.__oid:
                 ref.writestr(self.__name+OID_EXT,self.__oid)
             if readable and self.__key:
-                cnt_key = self.__key + "\n" + "\n".join( self.__salts )
+                salts = map(base64.b64encode,self.__salts)
+                cnt_key = self.__key + "\n" + "\n".join( salts )
                 ref.writestr(self.__name+KEY_EXT,cnt_key)
             ref.writestr(self.__name+HASH_EXT, "\n".join( self.__hashs ))
         return filepath
@@ -161,7 +164,7 @@ class Library(object):
         cnt_keys,cnt_oid = None, None
         if Key is not None or len(Salts) > 0:
             cnt_keys = (Key if Key is not None else "")+"\n"
-            cnt_keys += "\n".join(Salts)
+            cnt_keys += "\n".join(map(base64.b64encode,Salts))
         if Oid is not None: cnt_oid = Oid
         with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) as ref:
             info = ZipInfo(filename+HASH_EXT, time.localtime()[0:6])
@@ -190,10 +193,11 @@ class Library(object):
             if filename+OID_EXT in filelist:
                 oid = ref.read(filename+OID_EXT)
             if filename+KEY_EXT in filelist:
-                f = ref.open(filename+KEY_EXT)
-                key = f.readline().strip()
-                cnt = f.read()
-                salts = cnt.split()
+                key,salts='',[]
+                with ref.open(filename+KEY_EXT) as f:
+                    key = f.readline().strip()
+                    while f.peek(): salts.append(f.readline().strip())
+                salts=map(base64.b64decode,salts)
             tmp = Receipt( filename, oid, key, hashs, salts )
         return tmp
 

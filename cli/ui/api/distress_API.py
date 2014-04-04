@@ -17,7 +17,8 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA384
 from Crypto.Random import random
 
-CHUNK_SIZE = 512
+BLOCK_SIZE = 16  # Size of AES block cipher
+CHUNK_SIZE = 512 # Size of chunk we read from file and store on DISTRESS
 
 def encrypt_file(socket, library, filename, key):
 	""" 
@@ -26,24 +27,23 @@ def encrypt_file(socket, library, filename, key):
 	# 1) Chunk up the file into equal sized blocks
 	blocks = __chunk(filename)
 
-    # 2) Record the block's order and make random masks
-	masks = [os.urandom(CHUNK_SIZE) for _ in blocks] 
+    # 2) Generate random salts for encryption, these will need to be stored
+	salts = [os.urandom(BLOCK_SIZE) for _ in blocks]
 
     # 3) Encrypt each block using the key and masks
-	encrypted_blocks = [__encrypt(b,m,key) for b,m in zip(blocks,masks)]
+	encrypted_blocks = [__encrypt(b,s,key) for b,s in zip(blocks,salts)]
  
 	# 4) Get the Hash of each block, and shuffle them. 
 	plaintext_hashes = [__SHA384(b) for b in blocks]
-	encrypted_hashes = [__SHA384(b) for b in encrypted_blocks]
 	plaintext_hashes_shuffled = list( plaintext_hashes ) #make copy.
 	random.shuffle( plaintext_hashes_shuffled )
 
 	# 4b) At this point we consolidate the encrypted blocks if there are
 	#     duplicate plaintext hashes. This is rare!
-	packet, masks = __purify( plaintext_hashes, 
+	packet, salts = __purify( plaintext_hashes, 
  								plaintext_hashes_shuffled,
  								encrypted_blocks, 
- 								masks )
+ 								salts )
 
     # 5) Send the encrypted blocks with a random plaintext hash as it's key.
 	oid = __send_add(socket, packet)
@@ -52,24 +52,25 @@ def encrypt_file(socket, library, filename, key):
 	#    The shuffled hashes still designate order of the encrypted blocks on
 	#    our side.
 	return library.make_receipt( filename, plaintext_hashes_shuffled, 
-									masks, oid, key )
+									salts, oid, key )
 	
 
-def __purify(pths, spths, blocks, masks):
+def __purify(pths, spths, blocks, salts):
 	"""
-	Returns the packet to send to DISTRESS and an updated list of masks which
+	Returns the packet to send to DISTRESS and an updated list of salts which
 	overrides the duplicate values. This does two things, it first reduces the
-	number of blocks stored on the network, but it also makes sure the masks
+	number of blocks stored on the network, but it also makes sure the salts
 	are aligned with the shuffled location.
 	"""
 	seen,packet,nl = {}, [], []
 	keyvals = zip(spths,blocks)
-	for pth,kv,m in zip(pths,keyvals,masks):
+	for pth,kv,s in zip(pths,keyvals,salts):
 	 	if not pth in seen: 
-	 		seen[pth] = m
+	 		seen[pth] = s
 			packet.append( kv )
 		nl.append( seen[pth] )
 	return packet,nl
+
 
 def __chunk(file_path):
 	"""
@@ -98,32 +99,26 @@ def __SHA384(object):
 	object_hash.update(object)
 	return object_hash.hexdigest()
 
+def __pad(s):
+    """ Pad the chunks and keys to a multiple of the block size. """
+    x = BLOCK_SIZE-len(s)%BLOCK_SIZE
+    return s+x*chr(x)
 
-def __encrypt(block, mask, key):
+def __encrypt(block, salt, key):
 	"""
 	Encrypts the block using AES scheme and key.
 	"""
-	def sxor(b,m): # String XOR, adds NULL padding if needed.
-	    def o(x): return ord(x) if x is not None else 0
-	    return ''.join(chr(o(x)^o(y)) for x,y in map(None,b,m))
+	enc = AES.new(__pad(key), AES.MODE_CBC, salt) # initialize CBC with salt.
+	return base64.b64encode( enc.encrypt( __pad( block ) ) )
 
-	myCipher = AES.new(key)
-	padded_block = sxor(block,mask)
-	encrypted_block = myCipher.encrypt(padded_block)
-	return encrypted_block
-
-def __decrypt(block, mask, key):
+def __decrypt(block, salt, key):
 	"""
 	Decrypts the block using AES scheme and key.
 	"""
-	def sxor(b,m): # String XOR
-	    def o(x): return ord(x) if x is not None else 0
-	    return ''.join(chr(o(x)^o(y)) for x,y in map(None,b,m))
+	unpad = lambda s:s[0:-ord(s[-1])]
+	decr = AES.new( __pad(key), AES.MODE_CBC, salt ) # initialize CBC with salt.
+	return unpad( decr.decrypt( base64.b64decode( block ) ) )
 
-	decr = AES.new(key)
-	masked_value = decr.decrypt(block)
-	padded_value = sxor( masked_value, mask ) ## possibly padded.
-	return padded_value.rstrip('\0')
 
 def __send_add(socket, packet, expires="infinity", removable=False):
 	"""
@@ -137,25 +132,36 @@ def __send_add(socket, packet, expires="infinity", removable=False):
 	add_message = distress_cmsg.add(num_blocks, expires, removable)
 	socket.send(add_message.encode())
 
-	# OID shouldn't be larger than 64, right?
-	response = distress_cmsg.decode(socket.recv(64))
-
+	# Grab the OID we get from the server
+	response = distress_cmsg.decode(recvall(socket))
 	assert(response['msg'] == 'ack')
 	oid = response['oid']
 	
 	# send the key/value pairs for each chunk
-	for key,chunk in packet:
-		assert ( len(chunk) == CHUNK_SIZE )
-		block = base64.b64encode( chunk )
+	for key,block in packet:
 		send_message = distress_cmsg.addblock(key,block)
-		print "send:", send_message
-		socket.send( send_message )
-        msg = socket.recv(13) #wait for response, we can ignore if error.
-        print "\trecv:", msg
+		socket.send( send_message );recvall(socket) #hang for a bit to get the go ahead
 
 	return oid
 
-def recieve(socket, receipt, file_location):
+def recvall(socket, timeout=1.0):
+    """ Socket wrapper to receive an entire message from DISTRESS. """
+    socket.setblocking(0)
+    total,data,begin=[],'',time.time()
+    while 1:
+        if total and time.time()-begin>timeout: break
+        elif time.time()-begin>timeout*2: break
+        try:
+            data=socket.recv(512)
+            if data:
+                total.append(data)
+                begin=time.time()
+            else: time.sleep(0.1)
+        except: pass
+    return ''.join(total)
+
+
+def recieve(socket, receipt, file_location, override_missing=False):
 	"""
 	Fetches and writes the file described in receipt. File file_location
 	will be download_directory, and the file will be decrypted if possible.
@@ -171,24 +177,23 @@ def recieve(socket, receipt, file_location):
 	hashes = receipt.get_hashs()
 	salts = receipt.get_salts()
 
-	with open(file_location,'w') as out_file:
+	with open(file_location,'wb') as out_file:
 		for i in range(len(hashes)):
 			# Get the block
 			current_key = hashes[i]
 
 			block_request = distress_cmsg.getblock(current_key)
-
 			socket.send(block_request)
-			value = distress_cmsg.decode(socket.recv(CHUNK_SIZE*2))['val']
+			value = distress_cmsg.decode(recvall(socket))['val']
                 		
 			if value == 'missing':
+				if override_missing:
+				    print "A Chunk of this object was not found on DISTRESS!"
+				    continue
 				raise Exception('The chunk was not in the network!')
-			else:
-				value = base64.b64decode(value)
 			
 			# Decrypt if possible
 			if read_access: value = __decrypt(value, salts[i], key)
-
 			out_file.write(value)
 
 	return read_access

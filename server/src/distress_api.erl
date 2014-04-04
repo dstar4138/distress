@@ -154,6 +154,7 @@ do_add( Msg, Dat ) ->
     end.
 handle_msg_add_block( Packet, Dat, State ) ->
     Msg = distress_cmsg:decode( Packet ),
+    ?DEBUG("MSG: ~p",[Packet]),
     case clean_keyval( Msg ) of
         {error, R} -> 
             send( Dat, distress_cmsg:encode_err(R));

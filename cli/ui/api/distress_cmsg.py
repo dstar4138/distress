@@ -4,7 +4,6 @@
 import json
 
 HASHSIZE = 96 # 384 bits / 4 bit chars = 96, since SHA384 returns str.
-BLOCKSIZE = 684 # 512 in bytes, but base64 encoded.
 
 def add( NumBlocks, Expires="infinity", Removable=False ):
     assert( type(NumBlocks) is int )
@@ -21,7 +20,6 @@ def addblock( Key, Value ):
     assert( type(Key) is str )
     assert( len(Key) == HASHSIZE )
     assert( type(Value) is str )
-    assert( len(Value) == BLOCKSIZE )
     return json.dumps( { 'key' : Key, 'val' : Value } )
 
 def delblock( Oid, Key ):
