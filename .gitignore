@@ -1,6 +1,7 @@
 *.pyc
 __pycache__
 .eunit
+.rebar
 deps
 ebin
 *.o
