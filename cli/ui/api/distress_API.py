@@ -141,7 +141,7 @@ def __send_add(socket, packet, expires, removable, cmd=False):
 	# Grab the OID we get from the server
 	response = distress_cmsg.decode(__recvall(socket))
 	assert(response['msg'] == 'ack')
-	oid = response['oid']
+	oid = response['oid'] if removable else None
 	
 	# send the key/value pairs for each chunk
 	i=24
@@ -225,23 +225,17 @@ def __test_recieve():
 	sock.connect(('127.0.0.1', 65501))
 	recieve(sock, test_receipt, download_directory)
 
-def delete(socket, receipt):
+def delete_file(socket, receipt):
 	""" Delete all the chunks of the file in receipt, using oid
-	as the delte key. """
-
-	if receipt.get_oid == None:
-		print('You do not have deletion permission for this file!')
-		return
-
-	for block_hash in receipt.get_hashs():
-		delete_mesage = distress_cmsg.delblock(receipt.get_oid(), block_hash)
-		socket.send(delete_message)
-
-	# Send {msg: Delete, key: myKey, oid: myOid}
-	socket.send(something)
-	delete_message = distress_cmsg.delete(receipt.get_oid(), key)
-
-	return
+	    as the delte key. 
+	"""
+	try:
+		assert(receipt.get_oid())
+		for block_hash in receipt.get_hashs():
+			delete_msg = distress_cmsg.delblock(receipt.get_oid(), block_hash)
+			socket.send(delete_msg) #LATER: Consider ping back on success?
+	except: return False
+	return True
 
 # TEST_SOCKET = socket.socket()
 # TEST_SOCKET.connect(('127.0.0.1', 65501))

@@ -160,6 +160,11 @@ class Library(object):
          network then add it to the database. This will return the object when
          it's done.
         """
+        def write_file( ref, name, comment, dat ):
+            info = ZipInfo( name, time.localtime()[0:6] )
+            info.comment = comment
+            ref.writestr( info, dat )
+
         cnt_hashs = "\n".join( HashList )
         cnt_keys,cnt_oid = None, None
         if Key is not None or len(Salts) > 0:
@@ -167,11 +172,11 @@ class Library(object):
             cnt_keys += "\n".join(map(base64.b64encode,Salts))
         if Oid is not None: cnt_oid = Oid
         with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) as ref:
-            info = ZipInfo(filename+HASH_EXT, time.localtime()[0:6])
-            info.comment = self.__newid(ref)+","+str(len(HashList))
-            ref.writestr( info, cnt_hashs )
-            if cnt_keys: ref.writestr( filename+KEY_EXT, cnt_keys )
-            if cnt_oid:  ref.writestr( filename+OID_EXT, cnt_oid  )
+            name = filename+HASH_EXT
+            comment = self.__newid(ref)+","+str(len(HashList))
+            write_file( ref, name, comment, cnt_hashs )
+            if cnt_keys: write_file( ref, filename+KEY_EXT, comment, cnt_keys )
+            if cnt_oid:  write_file( ref, filename+OID_EXT, comment, cnt_oid  )
         return self.get_receipt( filename )
 
     def get_receipt(self, nameid):
@@ -239,25 +244,25 @@ class Library(object):
 
     def remove_receipt(self, nameid):
         """ Removes the Receipt from the Library. """
-        filename = None
+        def getid( zipinfo ): return zipinfo.comment.split(',')[0]
+        
+        fileid = None
         fsl = self.list()
         for k,l in fsl.items():
-            if nameid in [ k, l['name'] ]:
-                filename = l['name']
+            if nameid in [ k, l ]:
+                fileid = k
                 break
-        if not filename: return True
-        tmpdir = tmpfile.mkdtemp()
+        if not fileid: return True
+        tempdir = tempfile.mkdtemp()
         try:
             tempname = path.join( tempdir, 'test.zip' )
             with ZipFile( self.__path, mode='r', compression=ZIP_DEFLATED ) \
             as ref:
-                removables = [ ref.getinfo( filename+HASH_EXT ), \
-                               ref.getinfo( filename+KEY_EXT  ), \
-                               ref.getinfo( filename+OID_EXT  ) ]
                 with ZipFile( tempname, mode='w', compression=ZIP_DEFLATED ) \
                 as tmpref:
+                    tmpref.comment = Library.LIBRARY_REFERENCE
                     for item in ref.infolist():
-                        if item not in removables:
+                        if not getid(item) == fileid:
                             data = ref.read(item.filename)
                             tmpref.writestr(item, data)
             shutil.move( tempname, self.__path )
