@@ -8,10 +8,7 @@ SERVER_DIR=$(CURDIR)/server
 
 .PHONY: all build_client build_service test clean
 
-all: build_server build_client
-
-build_client:
-	@cd $(CLIENT_DIR) ; echo "Client build not implemented."
+all: build_server 
 
 build_server:
 	@cd $(SERVER_DIR) ; make compile

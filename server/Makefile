@@ -1,22 +1,24 @@
 #
 # Build for the DISTRESS P2P File System service.
 #
-
+APP=distress
 ERL=$(shell which erl)
 DOPTS=-Ddebug
 REBAR=$(CURDIR)/bin/rebar
 RELDIR=$(CURDIR)/rel
 RELTOOL_CFG=$(CURDIR)/conf/reltool.config
 OLD_REBAR_CONF=$(CURDIR)/conf/pre15rebar.config
+SCRIPT_DEPS=-pa./ebin ./deps/jsonx/ebin ./deps/swarm/ebin
+SCRIPT_EVAL="-eval '$(APP):start().'"
 
-.PHONY: compile clean distclean release scripts all
+.PHONY: compile clean distclean release scripts all rm-script gen-script
 
 ## Compile the Daemon code.
-debug: 
+debug: gen-script 
 	$(REBAR) $(DOPTS) get-deps compile 
-compile:
+compile: gen-script
 	$(REBAR) get-deps compile
-oldcompile:
+oldcompile: gen-script
 	$(REBAR) -C $(OLD_REBAR_CONF) get-deps compile
 
 ## Run the EUnit tests over the Daemon.
@@ -24,7 +26,7 @@ test: debug
 	$(REBAR) skip_deps=true eunit
 
 ## Superficial clean of workspace
-clean:
+clean: rm-script
 	$(REBAR) clean
 
 ## Total whipe of all releases and generated scripts.
@@ -34,7 +36,17 @@ distclean: clean
 ## Build a daemon release.
 release: compile
 	-mkdir $(RELDIR)
-	cd $(RELDIR); $(REBAR) create-node nodeid=distress
+	cd $(RELDIR); $(REBAR) create-node nodeid=$(APP)
 	cp $(RELTOOL_CFG) $(RELDIR)
 	$(REBAR) generate
+
+## Generate or remove a simple starter script for the app.
+rm-script:
+	-rm $(APP)
+
+gen-script: rm-script
+	touch $(APP)
+	echo "#!/bin/sh" > $(APP)
+	echo $(ERL) $(SCRIPT_DEPS) $(SCRIPT_EVAL) >> $(APP)
+	-chmod +x $(APP)
 
