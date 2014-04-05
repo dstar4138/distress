@@ -3,7 +3,12 @@ Allows for updating the configuration file from the command line. See below on
 naming conventions and the particular variables you are able to change.
 
 Usage: 
-    distress config <name> <value>
+    distress config <name> [<value>]
+
+Arguments:
+    <name>  The name of the configuration value you wish to view/change.
+    <value> The new value for the config value.
+
 
 Variable Information:
 
@@ -28,20 +33,24 @@ Variable Information:
 """
 from _config import build_cmd_args
 
-def config(socket, args, config, library):
+def config(socket, args, conf, library, cmd=False):
     """Handle's user input to configure the DISTRESS config file. 
     """
-    setting, value = args['<name>'], args['<value>'] 
-    (section, name) = setting.split ('.')
+    setting, value = args['<name>'], args['<value>']
 
-    if section not in config or name not in config[section]:
+    (section, name) = setting.split ('.')
+    if not value:
+        if cmd: print conf[section][name]
+        return conf[section][name]
+
+    if section not in conf or name not in conf[section]:
         print "'" + setting + "' is an invalid setting"
         return
 
-    config[section][name] = value
-    config.write()
+    conf[section][name] = value
+    conf.write()
 
 if __name__ == '__main__':
-    (socket, args, config, library) = build_cmd_args( __doc__, conn=False)
-    config(socket, args, config, library)
+    (socket, args, conf, library) = build_cmd_args( __doc__, conn=False)
+    config(socket, args, conf, library, cmd=True)
 
