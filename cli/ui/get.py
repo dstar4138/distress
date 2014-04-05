@@ -3,12 +3,17 @@ Get's a file from the DISTRESS network, as long as you have the receipt stored
 in your library.
 
 Usage: 
+    distress get [-p] <nameid>
     distress get <nameid> [ <storepath> ]
 
 Arguments:
     <nameid>    the name or id of the file in the library. See 'list' cmd.
     <storepath> override the path to store the received path.
+
+Options:
+    -p --path-preserve  preserve the path in which the file was added.
 """
+from os.path import basename
 from _config import build_cmd_args
 from api.distress_API import recieve
 
@@ -23,6 +28,7 @@ def get(socket, args, config, library, cmd=False):
     # Use the overrided store path.
     path = receipt.get_filename()
     if args['<storepath>']: path = args['<storepath>']
+    elif not args['--path-preserve']: path = basename( path )
 
     try:
         read_access = recieve( socket, receipt, path )
