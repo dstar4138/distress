@@ -28,21 +28,25 @@ def load_receipt_file( path, lock=None ):
         operation of Receipt.save(). Note the path must be a full path 
         including filename.
     """
-    ret = True
+    ret = None
+    _oid,_key,_hashs,_salts,_filename=None,None,None,[],None
     with ZipFile( path, mode='r', compression=ZIP_DEFLATED ) as ref:
         files = ref.infolist()
         oid = [f for f in files if f.filename.endswith(OID_EXT)]
         key = [f for f in files if f.filename.endswith(KEY_EXT)]
         hashs = [f for f in files if f.filename.endswith(HASH_EXT)]
-        if oid: self.__oid = ref.read(oid[0],lock)
+        if hashs: 
+            _hashs = ref.read(hashs[0],lock).split()
+            _filename = hashs[0].filename[:-len(HASH_EXT)]
+        else: return None
+        if oid: _oid = ref.read(oid[0],lock)
         if key:
             with ref.open(key[0],'r',lock) as tmp:
-                self.__key = tmp.readline().strip()
-                while tmp.peek(): self.__salts.append( tmp.readline().strip() )
-            self.__salts=map(base64.b64decode,self.__salts)
-        if hashs: self.__hashs = ref.read(hashs[0],lock).split()
-        else: ret = False
-    return ret
+                _key = tmp.readline().strip()
+                while tmp.peek(): _salts.append( tmp.readline().strip() )
+            _salts=map(base64.b64decode,_salts)
+
+    return Receipt( _filename, _oid, _key, _hashs, _salts )
 
 class Receipt(object):
     """ Simple accessor object that gets pulled from a Library. """
@@ -80,7 +84,7 @@ class Receipt(object):
         """
         return self.__salts
 
-    def save(self, path, readable=True, removable=False, lock=None):
+    def save(self, savepath, readable=True, removable=False, lock=None):
         """ Saves this receipt on it's own so that you can transfer it to
          another computer separately, aka exporting the Receipt. Note if you
          set readable to False, this means no one can decrypt the file once
@@ -89,7 +93,7 @@ class Receipt(object):
          the receipt zip using a password. Also note that the path will be
          appended with the receipt filename.
         """
-        filepath = path+self.__name+".receipt"
+        filepath = path.join(savepath, self.__name+".receipt")
         with ZipFile( filepath, mode='w', compression=ZIP_DEFLATED ) as ref:
             if lock: ref.setpassword( lock )
             if removable and self.__oid:
@@ -209,23 +213,27 @@ class Library(object):
     def import_receipt(self, receipt):
         """ Imports the Receipt into the Library and returns the ID it's given.
         """
+        def write_file( ref, name, comment, dat ):
+            info = ZipInfo( name, time.localtime()[0:6] )
+            info.comment = comment
+            ref.writestr( info, dat )
+
         newid = None
         with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) as ref:
             filename = receipt.get_filename()
-            if receipt.get_oid() and filename+OID_EXT not in ref.filelist:
-                ref.writestr(filename+OID_EXT, receipt.get_oid())
             Key = receipt.get_key()
             Salts = receipt.get_salts()
             filelist = [f.filename for f in ref.filelist]
+            comment = self.__newid(ref)+","+str(len(receipt.get_hashs()))
+            if receipt.get_oid() and filename+OID_EXT not in ref.filelist:
+                write_file(ref, filename+OID_EXT, comment, receipt.get_oid())
             if (Key or Salts) and filename+KEY_EXT not in filelist:
                 cnt_keys = (Key if Key is not None else "")+"\n"
                 cnt_keys += "\n".join(Salts)
-                ref.writestr(filename+KEY_EXT, cnt_keys)
+                write_file(ref,filename+KEY_EXT, comment, cnt_keys)
             if receipt.get_hashs() and filename+HASH_EXT not in filelist:
-                newid = self.__newid(ref)
-                info = ZipInfo(filename+HASH_EXT, time.localtime()[0:6])
-                info.comment = newid+","+len(receipt.get_hashs())
-                ref.writestr( info, receipt.get_hashs() )
+                hashs = '\n'.join(receipt.get_hashs())
+                write_file(ref, filename+HASH_EXT, comment, hashs)
             elif filename+HASH_EXT in filelist:
                 for k,v in self.list().items(): #File exists, so return its id
                     if v == filename:
