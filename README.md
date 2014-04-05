@@ -23,8 +23,7 @@ a python client tested on python 2.7.3.
 Just run `make` as long as Erlang is on the path it should work. To run the 
 DISTRESS server without having to build a release, type the following:
 
-* `./bin/runerl.sh`
-* Then once the Erlang shell starts: `distress:start().`
+* `./distressd`
 
 This is helpful for debugging the distress system before building the release
 for installation. 
@@ -56,12 +55,12 @@ Note that we used the file ID of the file, which can be found:
 
 
 ## Installing ##
-
-Deploying DISTRESS is simple. Running `make release` will generate a `rel` 
-directory which will contain everything you need to run DISTRESS, including a
-stripped down version of the Erlang VM. You can now zip/tar it up to distribute,
-however just linking to the binary should be enough to run on the current 
-platform:
+Note that this is not a necessary step if you just wish to mess around with 
+the DISTRESS system. But deploying DISTRESS is simple. Running `make release` 
+will generate a `rel` directory which will contain everything you need to run 
+DISTRESS, including a stripped down version of the Erlang VM. You can now 
+zip/tar it up to distribute, however just linking to the binary should be enough 
+to run on the current platform:
 
 ```
 make release
