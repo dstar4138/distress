@@ -1,6 +1,7 @@
 #! usr/bin/env python2
 
 import os
+import sys
 import math
 import socket
 import base64
@@ -18,19 +19,22 @@ from Crypto.Hash import SHA384
 from Crypto.Random import random
 
 BLOCK_SIZE = 16  # Size of AES block cipher
-CHUNK_SIZE = 512 # Size of chunk we read from file and store on DISTRESS
+CHUNK_SIZE = 1024 # Size of chunk we read from file and store on DISTRESS
 
-def encrypt_file(socket, library, filename, key):
+def encrypt_file(socket, library, filename, key, 
+                 expires="infinity", removable=False, cmd=False):
 	""" 
 	Encrypts the file using key. 
 	"""
 	# 1) Chunk up the file into equal sized blocks
+	if cmd: print "Breaking file into chunks..."
 	blocks = __chunk(filename)
 
     # 2) Generate random salts for encryption, these will need to be stored
 	salts = [os.urandom(BLOCK_SIZE) for _ in blocks]
 
     # 3) Encrypt each block using the key and masks
+	if cmd: print "Encrypting all",len(blocks),"chunks..."
 	encrypted_blocks = [__encrypt(b,s,key) for b,s in zip(blocks,salts)]
  
 	# 4) Get the Hash of each block, and shuffle them. 
@@ -44,13 +48,15 @@ def encrypt_file(socket, library, filename, key):
  								plaintext_hashes_shuffled,
  								encrypted_blocks, 
  								salts )
+ 	if cmd and len(packet)<len(blocks): print "Compressing duplicate blocks..."
 
     # 5) Send the encrypted blocks with a random plaintext hash as it's key.
-	oid = __send_add(socket, packet)
+	oid = __send_add(socket, packet, expires, removable, cmd)
 
 	# 6) Using the returned Owner ID, save the hashes and key in a Receipt.
 	#    The shuffled hashes still designate order of the encrypted blocks on
 	#    our side.
+	if cmd: print "Saving Receipt to local disk..."
 	return library.make_receipt( filename, plaintext_hashes_shuffled, 
 									salts, oid, key )
 	
@@ -120,7 +126,7 @@ def __decrypt(block, salt, key):
 	return unpad( decr.decrypt( base64.b64decode( block ) ) )
 
 
-def __send_add(socket, packet, expires="infinity", removable=False):
+def __send_add(socket, packet, expires, removable, cmd=False):
 	"""
 	Send the encrypted hashes with their respective blocks to the
 	network, and returns the OID that provides proof of ownership.
@@ -133,18 +139,26 @@ def __send_add(socket, packet, expires="infinity", removable=False):
 	socket.send(add_message.encode())
 
 	# Grab the OID we get from the server
-	response = distress_cmsg.decode(recvall(socket))
+	response = distress_cmsg.decode(__recvall(socket))
 	assert(response['msg'] == 'ack')
 	oid = response['oid']
 	
 	# send the key/value pairs for each chunk
+	i=24
+	if cmd: sys.stdout.write("Sending blocks to server")
 	for key,block in packet:
 		send_message = distress_cmsg.addblock(key,block)
-		socket.send( send_message );recvall(socket) #hang for a bit to get the go ahead
+		socket.send( send_message )
+		__recvall(socket) #hang for a bit to get the go ahead
+		if cmd: 
+		    sys.stdout.write('.');sys.stdout.flush()
+		    i=i+1 if i<79 else 0 # dot it over to 80 chars, then newline.
+		    if i == 0 : print ""
+	if cmd: print ""
 
 	return oid
 
-def recvall(socket, timeout=1.0):
+def __recvall(socket, timeout=1.0):
     """ Socket wrapper to receive an entire message from DISTRESS. """
     socket.setblocking(0)
     total,data,begin=[],'',time.time()
@@ -184,7 +198,7 @@ def recieve(socket, receipt, file_location, override_missing=False):
 
 			block_request = distress_cmsg.getblock(current_key)
 			socket.send(block_request)
-			value = distress_cmsg.decode(recvall(socket))['val']
+			value = distress_cmsg.decode(__recvall(socket))['val']
                 		
 			if value == 'missing':
 				if override_missing:
