@@ -16,18 +16,39 @@ Right now we have a limited set of requirements on purpose:
 * GNUMake or CMake
 
 However DISTRESS is headless and will need a client to connect with it. We have
-a python and C++ based client on the way. 
-
+a python client tested on python 2.7.3.
 
 ## Building ##
 
-Just run `make` as long as Erlang is on the path it should work. To run DISTRESS
-without having to build a release, type the following:
+Just run `make` as long as Erlang is on the path it should work. To run the 
+DISTRESS server without having to build a release, type the following:
 
 * `./bin/runerl.sh`
 * Then once the Erlang shell starts: `distress:start().`
 
-This is helpful for debugging the distress system before building the release.
+This is helpful for debugging the distress system before building the release
+for installation. 
+
+## Testing-out DISTRESS ##
+
+After building and running the server as mentioned above, you can then use the 
+client to connect to it by running:
+
+* `cd cli`
+* and then `./distress -h` to see the help menu.
+
+The DISTRESS client works like git, in that it has a bunch of subcommands
+each with their own options and parameters. Try adding a file:
+
+* `./distress add ../README.md`
+
+And then pulling it out again:
+
+* `./distress get 1`
+
+Note that we used the file ID of the file, which can be found:
+
+* `./distress list --verbose` 
 
 
 ## Installing ##
