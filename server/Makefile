@@ -19,7 +19,7 @@ debug: gen-script
 compile: gen-script
 	$(REBAR) get-deps compile
 oldcompile: gen-script
-	$(REBAR) -C $(OLD_REBAR_CONF) get-deps compile
+	$(REBAR) $(DOPTS) -C $(OLD_REBAR_CONF) get-deps compile
 
 ## Run the EUnit tests over the Daemon.
 test: debug
