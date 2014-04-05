@@ -8,7 +8,7 @@ REBAR=$(CURDIR)/bin/rebar
 RELDIR=$(CURDIR)/rel
 RELTOOL_CFG=$(CURDIR)/conf/reltool.config
 OLD_REBAR_CONF=$(CURDIR)/conf/pre15rebar.config
-SCRIPT_DEPS=-pa ./ebin ./deps/jsonx/ebin ./deps/swarm/ebin
+SCRIPT_DEPS=-pa $(CURDIR)/ebin $(CURDIR)/deps/jsonx/ebin $(CURDIR)/deps/swarm/ebin
 SCRIPT_EVAL="-eval '$(APP):start().'"
 
 .PHONY: compile clean distclean release scripts all rm-script gen-script

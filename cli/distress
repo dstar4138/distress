@@ -15,7 +15,7 @@ See 'distress <command> --help' for more information on a specific command.
 """
 
 import sys
-from os import sep as OSSEP
+from os import sep as OSSEP, path
 from subprocess import call
 from ui._config import getargs
 
@@ -24,7 +24,7 @@ PYTHON_EXEC='python2'
 
 ## Command extention and directory
 CMD_EXT='.py'
-CMD_DIR='ui' + OSSEP
+CMD_DIR=path.join( path.dirname( path.abspath(__file__) ), 'ui') + OSSEP
 
 if __name__ == '__main__':
 
