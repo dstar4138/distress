@@ -12,7 +12,7 @@ service like CrashPlan.
 
 Right now we have a limited set of requirements on purpose:
 
-* Erlang VM (version R15B01 or higher)
+* Erlang VM (version R15B01 or higher if you are building a release)
 * GNUMake or CMake
 
 However DISTRESS is headless and will need a client to connect with it. We have
@@ -28,6 +28,10 @@ DISTRESS server without having to build a release, type the following:
 
 This is helpful for debugging the distress system before building the release
 for installation. 
+
+NOTE: if you are running an older version of Erlang, then there may be errors,
+you can run `make oldcompile` in the `server` directory. This means you will be
+unable to build a release, but you should still be able to test it out. 
 
 ## Testing-out DISTRESS ##
 
