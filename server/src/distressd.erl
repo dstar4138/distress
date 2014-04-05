@@ -1,10 +1,10 @@
-%%% Usability Module for DISTRESS
+%%% Usability Module for the DISTRESS daemon
 %%%
 %%%  Adds ease of use functions for interacting with a running 
 %%%  DISTRESS service.
 %%%
 %%% @author Alexander Dean
--module(distress).
+-module(distressd).
 
 %% General Debuggery
 -include("debug.hrl").
@@ -18,10 +18,10 @@
 start( ) -> start( default ).
 start( ConfigFilePath ) -> 
     load_config( ConfigFilePath ),
-    application:start( distress ).
+    application:start( distressd ).
 
 %% @doc Stops a running DISTRESS Service on the running VM.
-stop() -> application:stop( distress ).
+stop() -> application:stop( distressd ).
 
 
 %%%===================================================================

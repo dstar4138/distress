@@ -1,14 +1,14 @@
 #
 # Build for the DISTRESS P2P File System service.
 #
-APP=distress
+APP=distressd
 ERL=$(shell which erl)
 DOPTS=-Ddebug
 REBAR=$(CURDIR)/bin/rebar
 RELDIR=$(CURDIR)/rel
 RELTOOL_CFG=$(CURDIR)/conf/reltool.config
 OLD_REBAR_CONF=$(CURDIR)/conf/pre15rebar.config
-SCRIPT_DEPS=-pa./ebin ./deps/jsonx/ebin ./deps/swarm/ebin
+SCRIPT_DEPS=-pa ./ebin ./deps/jsonx/ebin ./deps/swarm/ebin
 SCRIPT_EVAL="-eval '$(APP):start().'"
 
 .PHONY: compile clean distclean release scripts all rm-script gen-script

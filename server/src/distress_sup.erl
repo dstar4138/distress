@@ -20,6 +20,8 @@
 
 -define(TCP_OPTS, [{port,65501}]).
 
+-define(POOL_SIZE, 10).
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
@@ -48,5 +50,5 @@ init([]) ->
 %%   These take the current distress_api action handler.
 %% @end
 client_listener_child() ->
-    swarm:child_spec( clients, 100, swarm_tcp, ?TCP_OPTS, 
+    swarm:child_spec( clients, ?POOL_SIZE, swarm_tcp, ?TCP_OPTS, 
                       distress_api:fun_desc() ).
