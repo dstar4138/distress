@@ -223,7 +223,7 @@ class Library(object):
         with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) as ref:
             filename = receipt.get_filename()
             Key = receipt.get_key()
-            Salts = receipt.get_salts()
+            Salts = map(base64.b64encode,receipt.get_salts())
             filelist = [f.filename for f in ref.filelist]
             comment = self.__newid(ref)+","+str(len(receipt.get_hashs()))
             if receipt.get_oid() and filename+OID_EXT not in ref.filelist:
