@@ -15,7 +15,7 @@ Options:
   -r --read     allow read permissions to receipt copy
   -d --delete    allow deletion permissions to receipt copy
   -l LOCK --lock LOCK   add a lock passphrase to the exported receipt
-
+  -R --relative     relatively pulls out each receipt to put it side by side
 """
 from os import path
 from _config import build_cmd_args
@@ -39,6 +39,7 @@ def export(socket, args, config, library, cmd=False):
     nameid = args['<nameid>']
     savepath = args['<savepath>']
     lock = args['--lock']
+    relative = args['--relative']
     canread = determine_read( args )
     candelete = determine_delete( args )
 
@@ -47,7 +48,7 @@ def export(socket, args, config, library, cmd=False):
         if cmd: print "Could not find receipt with nameid:",nameid
         return False
 
-    newpath = receipt.save(savepath, canread, candelete, lock )
+    newpath = receipt.save( savepath, canread, candelete, lock, relative )
     if newpath:
         if cmd: print "Success!", newpath
         return True

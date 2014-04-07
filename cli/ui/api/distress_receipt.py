@@ -84,7 +84,7 @@ class Receipt(object):
         """
         return self.__salts
 
-    def save(self, savepath, readable=True, removable=False, lock=None):
+    def save(self, savepath, readable=True, removable=False, lock=None, relative=False):
         """ Saves this receipt on it's own so that you can transfer it to
          another computer separately, aka exporting the Receipt. Note if you
          set readable to False, this means no one can decrypt the file once
@@ -93,7 +93,8 @@ class Receipt(object):
          the receipt zip using a password. Also note that the path will be
          appended with the receipt filename.
         """
-        filepath = path.join(savepath, self.__name+".receipt")
+        name = self.__name if relative else path.basename( self.__name )
+        filepath = path.join(savepath, name+".receipt")
         with ZipFile( filepath, mode='w', compression=ZIP_DEFLATED ) as ref:
             if lock: ref.setpassword( lock )
             if removable and self.__oid:
