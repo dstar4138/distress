@@ -7,6 +7,7 @@ Usage:
 
 Options:
     -l LOCK --lock LOCK     The receipt may be locked, and needs a passphrase.
+    -r NEWNAME --rename NEWNAME If you have a file in your library with the samename, this will change the incoming file's name.
 
 """
 from os import path
@@ -26,6 +27,17 @@ def import_(socket, args, config, library, cmd=False):
 
     if cmd: print "Loading receipt file..."
     receipt = load_receipt_file( receiptpath, lock )
+
+    rename = args['--rename']
+    while True:
+        if library.get_receipt( receipt.get_filename() ):
+            if not rename:
+                if cmd: print "File with same name exists, please rename."
+                return False
+            else:
+                receipt.set_filename(rename)
+                break
+        else: break
 
     if cmd: print "Importing Receipt..."
     fileid = library.import_receipt( receipt )

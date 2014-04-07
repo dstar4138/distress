@@ -58,6 +58,10 @@ class Receipt(object):
         self.__hashs = hashs
         self.__salts = salts
 
+    def set_filename(self, newname):
+        """ Rename the file, only allowed during imports."""
+        self.__name=newname
+
     def get_filename(self):
         """ Returns the filename for which this receipt is for. """
         return self.__name
@@ -219,9 +223,9 @@ class Library(object):
             info.comment = comment
             ref.writestr( info, dat )
 
+        filename = receipt.get_filename()
         newid = None
         with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) as ref:
-            filename = receipt.get_filename()
             Key = receipt.get_key()
             Salts = map(base64.b64encode,receipt.get_salts())
             filelist = [f.filename for f in ref.filelist]
@@ -235,11 +239,12 @@ class Library(object):
             if receipt.get_hashs() and filename+HASH_EXT not in filelist:
                 hashs = '\n'.join(receipt.get_hashs())
                 write_file(ref, filename+HASH_EXT, comment, hashs)
-            elif filename+HASH_EXT in filelist:
-                for k,v in self.list().items(): #File exists, so return its id
-                    if v == filename:
-                        newid = k
-                        break
+        
+        for k,v in self.list().items():
+            if v == filename:
+                newid = k
+                break
+        
         return newid
 
     def __newid(self, ref):
