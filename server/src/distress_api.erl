@@ -28,7 +28,7 @@ fun_desc() -> {?MODULE, handle, []}.
 %% @doc Start off the Handle loop.
 handle( Socket, _Name, Transport, _Info, Args ) ->
     ?DEBUG("HANDLER STARTED: (~p,~p,~p,~p)",[Socket, _Name, Transport, _Info]),
-    handle_loop( {Socket, Transport, Args} ).
+    handle_loop( {Socket, Transport, Args, <<>>} ).
 
 
 %%%===================================================================
@@ -60,7 +60,7 @@ composefg( Oid, Key, Value ) -> g(f(Oid,Key,Value)).
 %% @end
 handle_loop( Dat ) ->
     case recv( Dat ) of 
-        {error, closed} -> close( Dat);
+        {error, closed} -> close( Dat );
         {error, Reason} -> ?ERROR("Socket Error: ~p",[Reason]);
         {ok, Message}   -> handle_msg( Message, Dat )
     end.
@@ -78,8 +78,12 @@ handle_loop_add_block( NumBlocks, Dat, State ) ->
         {error,closed} -> 
            ?DEBUG("Client closed before block count was met."); 
         {ok, Packet} ->
-            handle_msg_add_block( Packet, Dat, State ),
-            handle_loop_add_block( NumBlocks-1, Dat, State );
+            (case handle_msg_add_block( Packet, Dat, State, 0 ) of
+                 {ok, NewDat, N} -> 
+                     handle_loop_add_block( NumBlocks-N, NewDat, State );
+                 {get,NewDat, N} -> 
+                     handle_loop_add_block( NumBlocks-N, NewDat, State )
+            end);
         {error,R} -> 
             send( Dat, distress_cmsg:encode_err(R))
     end.
@@ -89,11 +93,20 @@ handle_loop_add_block( NumBlocks, Dat, State ) ->
 %%   out.
 %% @end
 handle_msg( Msg, Dat ) ->
-    case distress_cmsg:decode( Msg ) of
-        {error,Error} ->
-            send( Dat, distress_cmsg:encode_err(Error) ),
-            handle_loop( Dat );
-        Term -> do( Term, Dat )
+    Buffer = get_buffer( Dat ),
+    case distress_cmsg:decode( Msg, Buffer ) of
+        {ok, Val, NextBuff} ->
+            NewDat = set_buffer(Dat, NextBuff),
+            case Val of
+                {error,Error} ->
+                    send( NewDat, distress_cmsg:encode_err(Error) );
+%                    handle_loop( NewDat );
+                Term -> do( Term, NewDat )
+            end,
+            handle_msg(<<>>,NewDat);%Got a message, so check if we have more.
+        {get, NextBuff} ->
+            NewDat = set_buffer(Dat, NextBuff),
+            handle_loop( NewDat )
     end.
 
 %%%===================================================================
@@ -101,10 +114,15 @@ handle_msg( Msg, Dat ) ->
 %%%===================================================================
 
 %% @hidden
+%% @doc Update the locally read buffer.
+get_buffer( {_Socket, _Transport, _, Buff} ) -> Buff.
+set_buffer( {S,T,A,_}, Buff ) -> {S,T,A,Buff}.
+
+%% @hidden
 %% @doc Send/Recv the message on the provided socket and transport.
-send(  {Socket, Transport, _}, Msg ) -> Transport:send( Socket, Msg ).
-recv(  {Socket, Transport, _} ) -> Transport:recv( Socket, 0, infinity ).
-close( {Socket, Transport, _} ) -> Transport:close( Socket ).
+send(  {Socket, Transport, _, _}, Msg ) -> Transport:send( Socket, Msg ).
+recv(  {Socket, Transport, _, _} ) -> Transport:recv( Socket, 0, infinity ).
+close( {Socket, Transport, _, _} ) -> Transport:close( Socket ).
 
 %% @hidden
 %% @doc Based on message type, do an action or set of actions.
@@ -152,16 +170,25 @@ do_add( Msg, Dat ) ->
         _ ->
             send( Dat, distress_cmsg:encode_err(badarg) )
     end.
-handle_msg_add_block( Packet, Dat, State ) ->
-    Msg = distress_cmsg:decode( Packet ),
-    ?DEBUG("MSG: ~p",[Packet]),
-    case clean_keyval( Msg ) of
-        {error, R} -> 
-            send( Dat, distress_cmsg:encode_err(R));
-        Pair ->
-            add_block( Pair, State ),
-            send( Dat, distress_cmsg:encode_scs() )
+handle_msg_add_block( Packet, Dat, State, N ) ->
+    Buffer = get_buffer( Dat ),
+    case distress_cmsg:decode( Packet, Buffer ) of
+        {ok, Msg, NextBuff} ->  
+            case clean_keyval( Msg ) of
+                {error, R} -> 
+                    send( Dat, distress_cmsg:encode_err(R)),
+                    {ok, set_buffer(Dat, NextBuff), N};
+                Pair ->
+                    add_block( Pair, State ),
+                    send( Dat, distress_cmsg:encode_scs() ),
+                    handle_msg_add_block( <<>>,
+                                          set_buffer(Dat, NextBuff), 
+                                          State, 
+                                          N+1)
+            end;
+        {get,NextBuff} -> {get, set_buffer( Dat, NextBuff ), N}
     end.
+ 
 add_block( {Key, Block} = BlockPair, {Magic, Expires} ) ->
     {MyMagic, _Pass} = Magic( BlockPair ),
     %LATER: Broadcast adds into P2P Overlay for replication with Pass as magic.

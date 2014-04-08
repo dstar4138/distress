@@ -6,7 +6,9 @@
 %%% @author Alexander Dean
 -module( distress_cmsg ).
 
--export([decode/1]).
+-include("debug.hrl").
+
+-export([decode/2]).
 -export([encode_ack/1,encode_err/1,encode_get/2,encode_scs/0]).
 -export([get_type/1, get_value/2]).
 
@@ -26,9 +28,25 @@
 %%%===================================================================
 
 %% @doc Use the JSONx Library for decoding a binary Json message.
--spec decode( binary() ) -> term().
-decode( Binary ) -> 
-    secondary_decode( jsonx:decode( Binary, ?JSONX_OPTIONS ) ).
+%%   But simulate streaming by returning both the current term and 
+%%   a buffer. TODO: FIX THIS AS IT WILL KEEP BUFFING FOREVER.
+%% @end  
+-spec decode( binary(), binary() ) -> {term(), binary()}.
+decode( Binary, CurBuffer ) ->
+    ?DEBUG("RECV{~n--------~p~n-------~p~n=========~n~n",[Binary,CurBuffer]),
+    WorkingBlock = <<CurBuffer/binary,Binary/binary>>, %% ASSUMES ORDER
+    case scan_until_endpacket(WorkingBlock,<<>>) of
+        {ok, Block, NextBuff} ->
+            ?DEBUG("SPLITTING[~n~p,~n~p~n]~n",[Block,NextBuff]),
+            Term = secondary_decode( jsonx:decode( Block, ?JSONX_OPTIONS ) ),
+            {ok,Term,NextBuff};
+        {get, NextBuff} -> {get,NextBuff}
+    end.
+scan_until_endpacket(<<$},X/binary>>,<<A/binary>>)->
+    {ok, <<A/binary,$}>>, X};
+scan_until_endpacket(<<C:8,X/binary>>,<<A/binary>>)->
+    scan_until_endpacket(X,<<A/binary,C:8>>);
+scan_until_endpacket(<<>>,A) -> {get,A}.
 
 %% @doc Instead of a single encode function, we have one per message type.
 encode_ack( Oid ) -> jsonx:encode( [{?M,?A},{?O, e_uuid( Oid )}] ).

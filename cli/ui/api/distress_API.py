@@ -139,7 +139,7 @@ def __send_add(socket, packet, expires, removable, cmd=False):
 	socket.send(add_message.encode())
 
 	# Grab the OID we get from the server
-	response = distress_cmsg.decode(__recvall(socket))
+	response = distress_cmsg.decode(socket.recv(1024)) #__recvall(socket))
 	assert(response['msg'] == 'ack')
 	oid = response['oid'] if removable else None
 	
@@ -149,7 +149,7 @@ def __send_add(socket, packet, expires, removable, cmd=False):
 	for key,block in packet:
 		send_message = distress_cmsg.addblock(key,block)
 		socket.send( send_message )
-		__recvall(socket) #hang for a bit to get the go ahead
+		#__recvall(socket) #hang for a bit to get the go ahead
 		if cmd: 
 		    sys.stdout.write('.');sys.stdout.flush()
 		    i=i+1 if i<79 else 0 # dot it over to 80 chars, then newline.
@@ -158,7 +158,7 @@ def __send_add(socket, packet, expires, removable, cmd=False):
 
 	return oid
 
-def __recvall(socket, timeout=1.0):
+def __recvall(socket, timeout=0.5):
     """ Socket wrapper to receive an entire message from DISTRESS. """
     socket.setblocking(0)
     total,data,begin=[],'',time.time()
