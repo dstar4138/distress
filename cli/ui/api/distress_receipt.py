@@ -186,14 +186,16 @@ class Library(object):
             write_file( ref, name, comment, cnt_hashs )
             if cnt_keys: write_file( ref, filename+KEY_EXT, comment, cnt_keys )
             if cnt_oid:  write_file( ref, filename+OID_EXT, comment, cnt_oid  )
-        return self.get_receipt( filename )
+        return self.get_receipt( filename, reverse=True )
 
-    def get_receipt(self, nameid):
+    def get_receipt(self, nameid, reverse=False):
         """ Get a receipt for a particular file for retreival from the network.
         """
         fileid,filename = None,None
         fsl = self.list()
-        for k,l in fsl.items():
+        items = fsl.items()
+        if reverse: items.reverse()
+        for k,l in items:
             if nameid in [ k, l ]:
                 fileid,filename = k,l
                 break
@@ -205,7 +207,6 @@ class Library(object):
             for f in ref.filelist:
                 if f.filename not in checkfor: continue
                 if f.comment.split(',')[0] == fileid:
-                    print "Looking for",fileid,"in",f.comment
                     if f.filename.endswith( HASH_EXT ):
                         hashs=ref.read(f).split()
                     elif f.filename.endswith( OID_EXT ):
