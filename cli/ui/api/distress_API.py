@@ -114,7 +114,7 @@ def __encrypt(block, salt, key):
     """
     Encrypts the block using AES scheme and key.
     """
-    enc = AES.new(__pad(key), AES.MODE_CBC, salt) # initialize CBC with salt.
+    enc = AES.new(__pad(key), AES.MODE_OFB, salt) # initialize OFB with salt.
     return base64.b64encode( enc.encrypt( __pad( block ) ) )
 
 def __decrypt(block, salt, key):
@@ -122,7 +122,7 @@ def __decrypt(block, salt, key):
     Decrypts the block using AES scheme and key.
     """
     unpad = lambda s:s[0:-ord(s[-1])]
-    decr = AES.new( __pad(key), AES.MODE_CBC, salt ) # initialize CBC with salt.
+    decr = AES.new( __pad(key), AES.MODE_OFB, salt ) # initialize OFB with salt.
     return unpad( decr.decrypt( base64.b64decode( block ) ) )
 
 
