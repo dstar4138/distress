@@ -9,7 +9,7 @@
 -include("debug.hrl").
 
 -export([decode/2]).
--export([encode_ack/1,encode_err/1,encode_get/2,encode_scs/0]).
+-export([encode_ack/1,encode_err/1,encode_get/2,encode_geterr/2,encode_scs/0]).
 -export([get_type/1, get_value/2]).
 
 % We want a proplist back rather than a stuct or eep18.
@@ -52,6 +52,7 @@ scan_until_endpacket(<<>>,A) -> {get,A}.
 encode_ack( Oid ) -> jsonx:encode( [{?M,?A},{?O, e_uuid( Oid )}] ).
 encode_err({error,Err}) -> jsonx:encode( [{?M,?E},{?V,Err}] );
 encode_err( Err )       -> jsonx:encode( [{?M,?E},{?V,Err}] ).
+encode_geterr( Key, Err ) -> jsonx:encode( [{?M,?E},{?K,Key},{?V,Err}] ).
 encode_get( Key, Block ) -> jsonx:encode( [{?M,?G},{?K,Key},{?V,Block}] ).
 encode_scs() -> jsonx:encode( [{?M,?S}] ).
 

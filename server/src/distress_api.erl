@@ -143,11 +143,12 @@ do_get( Msg, Dat ) ->
             send( Dat, distress_cmsg:encode_err( badarg ) );
         Key -> 
             (case get_block( Key ) of
-                {error, R} -> send( Dat, distress_cmsg:encode_err( R ) );
-                {ok, Val}  -> send( Dat, distress_cmsg:encode_get( Key, Val ) )
+                {error, R} -> send( Dat, distress_cmsg:encode_geterr( Key, R ) );
+                {ok, Val}  -> 
+                     ?DEBUG("Success on GET KEY: ~p",[Key]),
+                     send( Dat, distress_cmsg:encode_get( Key, Val ) )
             end)
-    end,
-    handle_loop( Dat ).
+    end.
 get_block( Key ) ->
     case distress_db:select_block( Key ) of
         {error, Reason} -> {error, Reason};
@@ -217,8 +218,7 @@ do_del( Msg, Dat ) ->
                 _ -> 
                      ?DEBUG("Successful Del of ~p",[Key])
             end)
-    end,
-    handle_loop( Dat ).
+    end.
 del_block( Oid, Key ) ->
     case
        distress_db:delete_block( Key, Oid, fun ?MODULE:composefg/3 )
