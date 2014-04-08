@@ -191,29 +191,31 @@ class Library(object):
     def get_receipt(self, nameid):
         """ Get a receipt for a particular file for retreival from the network.
         """
-        tmp = None
+        fileid,filename = None,None
         fsl = self.list()
         for k,l in fsl.items():
             if nameid in [ k, l ]:
-                tmp = l
+                fileid,filename = k,l
                 break
-        if not tmp: return None
+        if not fileid: return None
 
+        hashs,oid,key,salts = [],None,'',[]
         with ZipFile( self.__path, mode='r', compression=ZIP_DEFLATED ) as ref:
-            filename = tmp
-            hashs = ref.read(filename+HASH_EXT).split()
-            oid,key,salts = None,None,None
-            filelist = [f.filename for f in ref.filelist]
-            if filename+OID_EXT in filelist:
-                oid = ref.read(filename+OID_EXT)
-            if filename+KEY_EXT in filelist:
-                key,salts='',[]
-                with ref.open(filename+KEY_EXT) as f:
-                    key = f.readline().strip()
-                    while f.peek(): salts.append(f.readline().strip())
-                salts=map(base64.b64decode,salts)
-            tmp = Receipt( filename, oid, key, hashs, salts )
-        return tmp
+            checkfor = [filename+OID_EXT, filename+KEY_EXT, filename+HASH_EXT]
+            for f in ref.filelist:
+                if f.filename not in checkfor: continue
+                if f.comment.split(',')[0] == fileid:
+                    print "Looking for",fileid,"in",f.comment
+                    if f.filename.endswith( HASH_EXT ):
+                        hashs=ref.read(f).split()
+                    elif f.filename.endswith( OID_EXT ):
+                        oid = ref.read(f)
+                    elif f.filename.endswith( KEY_EXT ):
+                        with ref.open(f) as kf:
+                            key=kf.readline().strip()
+                            while kf.peek(): salts.append(kf.readline().strip())
+                            salts=map(base64.b64decode,salts)
+        return Receipt( filename, oid, key, hashs, salts )
 
     def import_receipt(self, receipt):
         """ Imports the Receipt into the Library and returns the ID it's given.

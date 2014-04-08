@@ -189,7 +189,6 @@ def recieve(socket, receipt, file_location, override_missing=False):
     read_access = (key != None)
 
     hashes = receipt.get_hashs()
-    hashes.reverse() #TODO: WHY IS THIS BACKWARDS!?
     salts = receipt.get_salts()
 
     def wait_for_blocks(): 
