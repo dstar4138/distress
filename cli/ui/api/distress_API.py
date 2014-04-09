@@ -301,8 +301,20 @@ def delete_file(socket, receipt):
     except: return False
     return True
 
-# TEST_SOCKET = socket.socket()
-# TEST_SOCKET.connect(('127.0.0.1', 65501))
-# lib = getlib()
-# encrypt_file(TEST_SOCKET, lib,'C:\\test_file.txt','abcdefghijklmnop')
-# encrypt_file(TEST_SOCKET, lib, '/home/john/test_file.txt','abcdefghijklmnop')
+def verify_receipt(receipt, file_path):
+    """ Verifies that a particular receipt is for the
+        specified file.
+    """
+    # Right now does a simple check that the file chunks are in receipt
+    # If receipt is a superset of the file, this will still return true
+    hashes = receipt.get_hashs()
+    file_chunks = __chunk(file_path)
+
+    # If a chunk isn't in the hash list, it's not the right receipt
+    for chunk in file_chunks:
+        if __SHA384(chunk) not in hashes:
+            return False
+
+    # All chunks are in the hash receipt
+    return True
+
