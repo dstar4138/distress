@@ -10,7 +10,7 @@ The most commonly used commands are:
     info    view information about file
     import  import reciept file locally
     export  export reciept for others
-
+    verify  verify a reciept-file relation
 See 'distress <command> --help' for more information on a specific command.
 """
 
