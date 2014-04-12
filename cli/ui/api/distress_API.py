@@ -18,6 +18,7 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA384
 from Crypto.Random import random
 
+DEBUG = False
 BLOCK_SIZE = 16  # Size of AES block cipher
 CHUNK_SIZE = 1024 # Size of chunk we read from file and store on DISTRESS
 
@@ -204,10 +205,10 @@ def recieve(socket, receipt, file_location, override_missing=False):
             newbuffer = res.pop(-1)
             #MORE BAD: CLEANS UP AFTER SPLIT DELIM DELETION
             msgs = map(lambda m:distress_cmsg.decode(m+"}"), res)
-            print "MSGS:",msgs
+            if DEBUG: print "MSGS:",msgs
             return (msgs, newbuffer)
 
-        print "Builder Thread Started"
+        if DEBUG: print "Builder Thread Started"
         buff = {}   # The buffer of blocks we haven't gotten to yet.
         missed = [] # The list of blocks with missing values.
         buffblock = '' # The raw data from the socket.
@@ -254,17 +255,17 @@ def recieve(socket, receipt, file_location, override_missing=False):
                         else: raise Exception('The chunk was not in the network!')
                     else: # Add value to buffer.
                         buff[hashkey] = value
-        print "Builder Thread Finished"
+        if DEBUG: print "Builder Thread Finished"
         
     def send_all_blocks():
         """ Thread sending all blocks to the server using the same socket as
             it will recv from, but since they are non-blocking it is able to
             swap between both fairly quickly.
         """
-        print "Send Thread started"
+        if DEBUG: print "Send Thread started"
         for current_key in hashes:
             socket.send( distress_cmsg.getblock(current_key) )
-        print "Send Thread finished"
+        if DEBUG: print "Send Thread finished"
 
     sender = threading.Thread(target=send_all_blocks)
     builder = threading.Thread(target=wait_for_blocks)
