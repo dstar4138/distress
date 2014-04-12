@@ -11,6 +11,7 @@
 
 %% Public API
 -export([start/0, start/1, stop/0]).
+-export([get_myid/0]).
 
 -define(DEFAULT_CONFIG, []).
 
@@ -23,6 +24,12 @@ start( ConfigFilePath ) ->
 %% @doc Stops a running DISTRESS Service on the running VM.
 stop() -> application:stop( distressd ).
 
+%% @doc Get the identifier of the currently running DISTRESS Service.
+get_myid() ->
+    case distress_db:get_state_key( my_id ) of
+        {my_id, ID} -> ID;
+        Err -> Err
+    end.
 
 %%%===================================================================
 %%% Internal functions
