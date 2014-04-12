@@ -37,7 +37,7 @@ def verify(args, config, library, cmd=False):
 ## then run the addition function. Otherwise this module just provides
 ## a function of the same name, which can be used via shell.
 if __name__ == '__main__':
-    (socket, args, config, library) = build_cmd_args( __doc__ )
+    (socket, args, config, library) = build_cmd_args( __doc__, conn=False)
     verify(args, config, library, cmd=True )
 
 
