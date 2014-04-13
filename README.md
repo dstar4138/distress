@@ -53,6 +53,12 @@ Note that we used the file ID of the file, which can be found:
 
 * `./distress list --verbose`
 
+We can then verify our file by either doing a diff or checking it against the 
+receipt:
+
+* `diff README.md ../README.md`
+* `./distress verify 1 README.md`
+
 
 ## Installing ##
 Note that this is not a necessary step if you just wish to mess around with
