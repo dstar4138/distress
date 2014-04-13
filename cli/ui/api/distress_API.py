@@ -22,10 +22,10 @@ DEBUG = False
 BLOCK_SIZE = 16  # Size of AES block cipher
 CHUNK_SIZE = 1024 # Size of chunk we read from file and store on DISTRESS
 
-def encrypt_file(socket, library, filename, key, 
+def encrypt_file(socket, library, filename, key,
                  expires="infinity", removable=False, cmd=False):
-    """ 
-    Encrypts the file using key. 
+    """
+    Encrypts the file using key.
     """
     # 1) Chunk up the file into equal sized blocks
     if cmd: print "Breaking file into chunks..."
@@ -37,17 +37,17 @@ def encrypt_file(socket, library, filename, key,
     # 3) Encrypt each block using the key and masks
     if cmd: print "Encrypting all",len(blocks),"chunks..."
     encrypted_blocks = [__encrypt(b,s,key) for b,s in zip(blocks,salts)]
- 
-    # 4) Get the Hash of each block, and shuffle them. 
+
+    # 4) Get the Hash of each block, and shuffle them.
     plaintext_hashes = [__SHA384(b) for b in blocks]
     plaintext_hashes_shuffled = list( plaintext_hashes ) #make copy.
     random.shuffle( plaintext_hashes_shuffled )
 
     # 4b) At this point we consolidate the encrypted blocks if there are
     #     duplicate plaintext hashes. This is rare!
-    packet, salts = __purify( plaintext_hashes, 
+    packet, salts = __purify( plaintext_hashes,
                                 plaintext_hashes_shuffled,
-                                encrypted_blocks, 
+                                encrypted_blocks,
                                 salts )
     if cmd and len(packet)<len(blocks): print "Compressing duplicate blocks..."
 
@@ -58,9 +58,9 @@ def encrypt_file(socket, library, filename, key,
     #    The shuffled hashes still designate order of the encrypted blocks on
     #    our side.
     if cmd: print "Saving Receipt to local disk..."
-    return library.make_receipt( filename, plaintext_hashes_shuffled, 
+    return library.make_receipt( filename, plaintext_hashes_shuffled,
                                     salts, oid, key )
-    
+
 
 def __purify(pths, spths, blocks, salts):
     """
@@ -72,7 +72,7 @@ def __purify(pths, spths, blocks, salts):
     seen,packet,nl = {}, [], []
     keyvals = zip(spths,blocks)
     for pth,kv,s in zip(pths,keyvals,salts):
-        if not pth in seen: 
+        if not pth in seen:
             seen[pth] = s
             packet.append( kv )
         nl.append( seen[pth] )
@@ -88,7 +88,7 @@ def __chunk(file_path):
     # Ensure the proper number of chunks regardless of Python version
     num_chunks = math.ceil(filesize / float(CHUNK_SIZE))
     num_chunks = int(num_chunks)
-    
+
     object_file = open(file_path, 'rb')
     chunks = []
     for i in range(num_chunks):
@@ -100,7 +100,7 @@ def __chunk(file_path):
 def __SHA384(object):
     """
     Computes the hash of object. Uses crytographically secure
-    SHA384 from PyCrypto. 
+    SHA384 from PyCrypto.
     """
     object_hash = SHA384.new()
     object_hash.update(object)
@@ -143,7 +143,7 @@ def __send_add(socket, packet, expires, removable, cmd=False):
     response = distress_cmsg.decode(__recvall(socket))
     assert(response['msg'] == 'ack')
     oid = response['oid'] if removable else None
-    
+
     # send the key/value pairs for each chunk
     i=24
     if cmd: sys.stdout.write("Sending blocks to server")
@@ -151,7 +151,7 @@ def __send_add(socket, packet, expires, removable, cmd=False):
         send_message = distress_cmsg.addblock(key,block)
         socket.send( send_message )
         #__recvall(socket) #hang for a bit to get the go ahead
-        if cmd: 
+        if cmd:
             sys.stdout.write('.');sys.stdout.flush()
             i=i+1 if i<79 else 0 # dot it over to 80 chars, then newline.
             if i == 0 : print ""
@@ -192,13 +192,13 @@ def recieve(socket, receipt, file_location, override_missing=False):
     hashes = receipt.get_hashs()
     salts = receipt.get_salts()
 
-    def wait_for_blocks(): 
-        """ Thread waiting for reply blocks from Server! This will then add 
+    def wait_for_blocks():
+        """ Thread waiting for reply blocks from Server! This will then add
         them to the output file in order.
         """
         def __decode_attempt( bufferblock ):
             """ Read through the buffered block and check if there is a full
-                message. If so then decode it and return the leftover buffer, 
+                message. If so then decode it and return the leftover buffer,
                 otherwise just return the old buffer.
             """
             res = bufferblock.split('}') #BAD: ASSUMES JSON
@@ -218,26 +218,26 @@ def recieve(socket, receipt, file_location, override_missing=False):
             cur_hash = hashes[i]
             while True:
                 # Check if the current block key is in the buffer.
-                if cur_hash in buff: 
+                if cur_hash in buff:
                     value = buff.pop(cur_hash)
                     # If so, grab it, decrypt it if possible, and output it to
                     # our file. We'll then update which key we want.
                     if read_access: value = __decrypt(value, salts[i], key)
                     out_file.write(value)
 
-                    # If we are out of keys, then leave the loop 
+                    # If we are out of keys, then leave the loop
                     i+=1
                     if i >= maxsize: break
                     cur_hash = hashes[i]
                     continue
-                
+
                 # Check if we are in the missing block list, if so, skip it.
                 elif cur_hash in missed:
                     i+=1
                     if i >= maxsize: break
                     cur_hash = hashes[i]
                     continue
- 
+
                 # Since we haven't seen our block yet, we need to check the
                 # socket. We'll read everything off the socket and store in the
                 # in-memory buffer.
@@ -248,7 +248,7 @@ def recieve(socket, receipt, file_location, override_missing=False):
                 # If the buffer contains at least one block, we'll work on it.
                 for msg in msgs:
                     value,hashkey = msg['val'],msg['key']
-                    if value == 'missing': 
+                    if value == 'missing':
                         if override_missing:
                             missed.insert( hashkey )
                             print "A Chunk of this object wasn't found in DISTRESS!"
@@ -256,7 +256,7 @@ def recieve(socket, receipt, file_location, override_missing=False):
                     else: # Add value to buffer.
                         buff[hashkey] = value
         if DEBUG: print "Builder Thread Finished"
-        
+
     def send_all_blocks():
         """ Thread sending all blocks to the server using the same socket as
             it will recv from, but since they are non-blocking it is able to
@@ -279,8 +279,8 @@ def recieve(socket, receipt, file_location, override_missing=False):
 
 def __test_recieve():
     # This is to test the recieve function. You can edit the particular
-    # OID, hashes, and keys depending on what files you've put into the 
-    # network. 
+    # OID, hashes, and keys depending on what files you've put into the
+    # network.
     test_receipt = distress_receipt.Receipts('93aab4f6-1e51-4719-93eb-64f727da451b',
                         'abcdefghijklmnop',
                         ['a23e6fffd0a22e288aafa3dfe7deafe53ff8ff533b456e74f539fbfbf4f222d8d9c6ebb9d88fbca6d6e5fa612eb62bf1'],
@@ -292,7 +292,7 @@ def __test_recieve():
 
 def delete_file(socket, receipt):
     """ Delete all the chunks of the file in receipt, using oid
-        as the delte key. 
+        as the delte key.
     """
     try:
         assert(receipt.get_oid())

@@ -4,7 +4,7 @@ to another person. You can restrict the permissions you want to give them too.
 Note that you can lock this Receipt with a separate password before you pass it
 off to a friend.
 
-Usage: 
+Usage:
     distress export [options] <nameid> <savepath>
 
 Arguments:

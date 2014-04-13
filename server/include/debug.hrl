@@ -7,7 +7,7 @@
 -define(DEBUG(Msg,Fmt),ok).
 -endif.
 
-%% Explicit Error Message formatting. 
+%% Explicit Error Message formatting.
 -define(ERROR(Msg),exit({Msg,erlang:get_stacktrace()})).
 -define(ERROR(Msg,Fmt),exit({io_lib:format(Msg,Fmt),erlang:get_stacktrace()})).
 

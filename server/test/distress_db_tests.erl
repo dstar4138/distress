@@ -7,16 +7,16 @@
 -include_lib("eunit/include/eunit.hrl").
 -define(TEST_DIR,"db"). %Will be in $(CURDIR)/.eunit/db
 -define(BLOCKSIZE, 16). %The System does not enforce this, its client enforced.
--define(KEY_HASH, sha384). 
+-define(KEY_HASH, sha384).
 
 setup_mnesia_connection() ->
     distress_db:verify_install( ?TEST_DIR ).
 shutdown_mnesia_connection(_) ->
     application:stop(mnesia),
     clear_test_dir().
-clear_test_dir() -> 
+clear_test_dir() ->
     os:cmd("rm -r "++?TEST_DIR).
-     
+
 
 %% @doc Returns a set of EUnit tests to execute.
 all_test_() ->
@@ -28,7 +28,7 @@ all_tests(_) ->
 
 
 setup_tests() ->
-    [{"verify mnesia", 
+    [{"verify mnesia",
         ?_assert( lists:member(mnesia_locker, erlang:registered()) )},
      {"verify t_block",
         ?_assertEqual( 5, mnesia:table_info(t_block,arity) )},
@@ -36,7 +36,7 @@ setup_tests() ->
         ?_assertEqual( ok, distress_db:verify_install( ?TEST_DIR ) )}
     ].
 
-insert_tests() -> 
+insert_tests() ->
     {_, Key1, Expires1, Block1, Magic1} = gen_entry( infinity, false ),
     {_, Key2, Expires2, Block2, Magic2} = gen_entry( infinity, true ),
     {_, Key3, Expires3, Block3, Magic3} = gen_entry( now, false ),
@@ -64,7 +64,7 @@ select_tests() ->
     {_, Key2, Expires2, Block2, Magic2} = gen_entry( infinity, true ),
     {_, Key3, Expires3, Block3, Magic3} = gen_entry( now, false ),
     {_, Key4, Expires4, Block4, Magic4} = gen_entry( now, true ),
-    InsertThenLookup = fun( K, E, B, M ) -> 
+    InsertThenLookup = fun( K, E, B, M ) ->
                           ok = distress_db:insert_block( K, E, B, M ),
                           distress_db:select_block( K )
                        end,
@@ -81,7 +81,7 @@ select_tests() ->
         ?_assertEqual( [], InsertThenLookup(Key4,Expires4,Block4,Magic4) )}
     ].
 
-delete_tests() -> 
+delete_tests() ->
     {Oid1, Key1, Expires1, Block1, Magic1} = gen_entry( infinity, false ),
     {Oid2, Key2, Expires2, Block2, Magic2} = gen_entry( infinity, true ),
     {Oid3, Key3, Expires3, Block3, Magic3} = gen_entry( now, false ),
@@ -90,7 +90,7 @@ delete_tests() ->
     InsertThenDelete = fun( O, K, E, B, M ) ->
                             ok = distress_db:insert_block( K, E, B, M ),
                             distress_db:delete_block( K, O, fun f/3 )
-                       end, 
+                       end,
     [{"delete missing",
         ?_assertEqual( ok, distress_db:delete_block( Key1, Oid1, fun f/3 ) )},
      {"delete when R=false,E=inf,O=valid",
@@ -137,14 +137,14 @@ gen_entry(infinity, Removable ) ->
 gen_rand_block() ->
     Block = crypto:rand_bytes( ?BLOCKSIZE ),
     Key = crypto:hash( ?KEY_HASH, Block ),
-    {Key, Block}. 
+    {Key, Block}.
 
 %% @hidden
-%% @doc Generate a magic value using the 
+%% @doc Generate a magic value using the
 gen_magic( false, _, _ ) -> {uuid(), nil};
 gen_magic( true, Key, Block ) ->
     Oid = uuid(),
-    Magic = f( Oid, Key, Block ), 
+    Magic = f( Oid, Key, Block ),
     {Oid, Magic}.
 
 %% @hidden
@@ -157,7 +157,7 @@ unixtime() -> {Macro,Sec,_} = now(),(Macro*1000000+Sec).
 
 %% @hidden
 %% @doc Returns a UUID version 4.
-uuid() -> 
+uuid() ->
    <<A:48,B:12,C:62,_:6>>=crypto:rand_bytes(16),
    <<A:48,4:4,B:12,2:2,C:62>>.
 

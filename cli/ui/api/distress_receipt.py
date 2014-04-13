@@ -25,7 +25,7 @@ def test_lib():
 def load_receipt_file( path, lock=None ):
     """ Loads an exported receipt for importing into a Library. If the
         receipt was locked, it will need a password. This is the opposite
-        operation of Receipt.save(). Note the path must be a full path 
+        operation of Receipt.save(). Note the path must be a full path
         including filename.
     """
     ret = None
@@ -35,7 +35,7 @@ def load_receipt_file( path, lock=None ):
         oid = [f for f in files if f.filename.endswith(OID_EXT)]
         key = [f for f in files if f.filename.endswith(KEY_EXT)]
         hashs = [f for f in files if f.filename.endswith(HASH_EXT)]
-        if hashs: 
+        if hashs:
             _hashs = ref.read(hashs[0],lock).split()
             _filename = hashs[0].filename[:-len(HASH_EXT)]
         else: return None
@@ -242,12 +242,12 @@ class Library(object):
             if receipt.get_hashs() and filename+HASH_EXT not in filelist:
                 hashs = '\n'.join(receipt.get_hashs())
                 write_file(ref, filename+HASH_EXT, comment, hashs)
-        
+
         for k,v in self.list().items():
             if v == filename:
                 newid = k
                 break
-        
+
         return newid
 
     def __newid(self, ref):
@@ -262,7 +262,7 @@ class Library(object):
     def remove_receipt(self, nameid):
         """ Removes the Receipt from the Library. """
         def getid( zipinfo ): return zipinfo.comment.split(',')[0]
-        
+
         fileid = None
         fsl = self.list()
         for k,l in fsl.items():

@@ -23,7 +23,7 @@ TIMEOUT Formatting:
     which can be given respectively:
         date +%s
         date -R
-    Note all timestamps are considered to be UTC, unless otherwise stated. 
+    Note all timestamps are considered to be UTC, unless otherwise stated.
 
     Example:
         ./distress -p -t "$(date --date '09:00 next Fri' -R)" destruct.txt
@@ -73,7 +73,7 @@ def determine_expires( args ):
     return expires
 
 def determine_delete( args ):
-    """ Removable defaults to False if not provided. It can be overridden 
+    """ Removable defaults to False if not provided. It can be overridden
         by simply toggling --removable.
     """
     return args['--removable']
@@ -104,7 +104,7 @@ def add(socket, args, config, library, cmd=False):
 
         for filename in files:
             try:
-                receipt = encrypt_file(socket, library, filename, key, 
+                receipt = encrypt_file(socket, library, filename, key,
                                         expires, removable, cmd)
                 if cmd: print receipt.get_filename()+" added!"
                 else: ret.append( receipt )

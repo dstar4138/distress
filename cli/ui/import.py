@@ -2,7 +2,7 @@
 Imports a Receipt file into the local client's library. This is useful if you
 are trading receipts with another person.
 
-Usage: 
+Usage:
     distress import [options] <receipt path>
 
 Options:
@@ -12,7 +12,7 @@ Options:
 """
 from os import path
 from _config import build_cmd_args
-from api.distress_receipt import load_receipt_file 
+from api.distress_receipt import load_receipt_file
 
 def import_(socket, args, config, library, cmd=False):
     """ Handles user input to add a file's receipt to the local library.
@@ -48,6 +48,6 @@ def import_(socket, args, config, library, cmd=False):
     if not cmd: return fileid
 
 if __name__ == '__main__':
-    (socket, args, config, library) = build_cmd_args( __doc__, conn=False )    
+    (socket, args, config, library) = build_cmd_args( __doc__, conn=False )
     import_( socket, args, config, library, cmd=True )
 

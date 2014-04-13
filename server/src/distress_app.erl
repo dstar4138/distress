@@ -1,6 +1,6 @@
 %%% The DISTRESS Application Monitor
 %%%
-%%% Starts the DISTRESS application in the Erlang VM and monitors the process 
+%%% Starts the DISTRESS application in the Erlang VM and monitors the process
 %%% tree.
 %%%
 %%% @author Alexander Dean
@@ -19,7 +19,7 @@
 
 %% @private
 %% @doc Starts off the primary application supervisor.
-start(_StartType, _StartArgs) -> 
+start(_StartType, _StartArgs) ->
     ?DEBUG("Starting Local persistant storage service..."),
     startup_mnesia(),
     ?DEBUG("Starting DISTRESS Service..."),
@@ -27,7 +27,7 @@ start(_StartType, _StartArgs) ->
 
 %% @private
 %% @doc Called by the behaviour right before shutting down.
-prep_stop( _State ) -> 
+prep_stop( _State ) ->
     ?DEBUG("Stopping DISTRESS Service...").
 
 %% @private

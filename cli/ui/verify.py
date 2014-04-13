@@ -1,4 +1,4 @@
-""" 
+"""
 Verifies that the file is the one represented in a particular receipt.
 
 Usage:
@@ -19,7 +19,7 @@ def verify(args, config, library, cmd=False):
 
     file_path  = args['<file_path>']
     receipt_id = args['<receipt_id>']
-    
+
     receipt = library.get_receipt(receipt_id)
 
     if not receipt:

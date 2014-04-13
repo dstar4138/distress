@@ -2,7 +2,7 @@
 Get's a file from the DISTRESS network, as long as you have the receipt stored
 in your library.
 
-Usage: 
+Usage:
     distress get [-p] <nameid>
     distress get <nameid> [ <storepath> ]
 
@@ -32,7 +32,7 @@ def get(socket, args, config, library, cmd=False):
 
     try:
         read_access = recieve( socket, receipt, path )
-        
+
         if not cmd: return (True, read_access)
 
         if read_access:
@@ -41,9 +41,9 @@ def get(socket, args, config, library, cmd=False):
             print "File downloaded, but you are missing read access."
     except Exception as e:
         print e
-   
+
     # We broke out of the recieve block, so it must have been an error
-    return (False, False) 
+    return (False, False)
 
 if __name__ == '__main__':
     (socket, args, config, library) = build_cmd_args( __doc__ )

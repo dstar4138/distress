@@ -14,8 +14,8 @@ SCRIPT_EVAL="-eval '$(APP):start().'"
 .PHONY: compile clean distclean release scripts all rm-script gen-script
 
 ## Compile the Daemon code.
-debug: gen-script 
-	$(REBAR) $(DOPTS) get-deps compile 
+debug: gen-script
+	$(REBAR) $(DOPTS) get-deps compile
 compile: gen-script
 	$(REBAR) get-deps compile
 oldcompile: gen-script

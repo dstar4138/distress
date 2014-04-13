@@ -1,8 +1,8 @@
 %%% The Distress Application Supervisor
 %%%
 %%%   The Distress application is currently (without the P2P overlay
-%%%   installed) a simple database system wrapped around a TCP 
-%%%   acceptor pool. 
+%%%   installed) a simple database system wrapped around a TCP
+%%%   acceptor pool.
 %%%
 %%% @author Alexander Dean
 -module(distress_sup).
@@ -26,7 +26,7 @@
 %%% API functions
 %%%===================================================================
 
-%% @doc Starts the supervisor and child subtree for the client acceptor pool. 
+%% @doc Starts the supervisor and child subtree for the client acceptor pool.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -50,5 +50,5 @@ init([]) ->
 %%   These take the current distress_api action handler.
 %% @end
 client_listener_child() ->
-    swarm:child_spec( clients, ?POOL_SIZE, swarm_tcp, ?TCP_OPTS, 
+    swarm:child_spec( clients, ?POOL_SIZE, swarm_tcp, ?TCP_OPTS,
                       distress_api:fun_desc() ).

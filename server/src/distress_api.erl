@@ -39,7 +39,7 @@ handle( Socket, _Name, Transport, _Info, Args ) ->
 %% @doc Magic value generation.
 f( Oid, Key, Value ) ->
     HashedKey = crypto:hash( sha256, Key ), % Get Key to right length
-    S = crypto:aes_ctr_stream_init(HashedKey, Oid), % Generate cypher 
+    S = crypto:aes_ctr_stream_init(HashedKey, Oid), % Generate cypher
     {_,Magic} = crypto:aes_ctr_stream_encrypt(S, Value), % Make Magic
     crypto:hash( sha, Magic ).    % Compress encryption to CID length
 
@@ -63,32 +63,32 @@ composefg( Oid, Key, Value ) -> g(f(Oid,Key,Value)).
 %%   handling will jump back into this loop after processing.
 %% @end
 handle_loop( Dat ) ->
-    case recv( Dat ) of 
+    case recv( Dat ) of
         {error, closed} -> close( Dat );
         {error, Reason} -> ?ERROR("Socket Error: ~p",[Reason]);
         {ok, Message}   -> handle_msg( Message, Dat )
     end.
 
 %% @hidden
-%% @doc Handles messages once an Add-File message appears, will stay in this 
+%% @doc Handles messages once an Add-File message appears, will stay in this
 %%   mode until client closes or we hit the end of the block count. This will
 %%   then drop back to handle_loop/1.
-%% @end  
+%% @end
 handle_loop_add_block( 0, Dat, _State ) ->
     ?DEBUG("Exiting add-block mode"),
     handle_loop( Dat );
-handle_loop_add_block( NumBlocks, Dat, State ) -> 
+handle_loop_add_block( NumBlocks, Dat, State ) ->
     case recv( Dat ) of
-        {error,closed} -> 
-           ?DEBUG("Client closed before block count was met."); 
+        {error,closed} ->
+           ?DEBUG("Client closed before block count was met.");
         {ok, Packet} ->
             (case handle_msg_add_block( Packet, Dat, State, 0 ) of
-                 {ok, NewDat, N} -> 
+                 {ok, NewDat, N} ->
                      handle_loop_add_block( NumBlocks-N, NewDat, State );
-                 {get,NewDat, N} -> 
+                 {get,NewDat, N} ->
                      handle_loop_add_block( NumBlocks-N, NewDat, State )
             end);
-        {error,R} -> 
+        {error,R} ->
             send( Dat, distress_cmsg:encode_err(R))
     end.
 
@@ -132,7 +132,7 @@ close( {Socket, Transport, _, _} ) -> Transport:close( Socket ).
 %% @doc Based on message type, do an action or set of actions.
 do( Msg, Dat ) ->
     case distress_cmsg:get_type( Msg ) of
-        add -> do_add( Msg, Dat ); 
+        add -> do_add( Msg, Dat );
         get -> do_get( Msg, Dat );
         del -> do_del( Msg, Dat );
         Type -> ?ERROR("Bad message type: ~p",[Type])
@@ -145,10 +145,10 @@ do_get( Msg, Dat ) ->
         undefined ->
             ?DEBUG("Get message missing 'key' value: ~p",[Msg]),
             send( Dat, distress_cmsg:encode_err( badarg ) );
-        Key -> 
+        Key ->
             (case get_block( Key ) of
                 {error, R} -> send( Dat, distress_cmsg:encode_geterr( Key, R ) );
-                {ok, Val}  -> 
+                {ok, Val}  ->
                      ?DEBUG("Success on GET KEY: ~p",[Key]),
                      send( Dat, distress_cmsg:encode_get( Key, Val ) )
             end)
@@ -178,22 +178,22 @@ do_add( Msg, Dat ) ->
 handle_msg_add_block( Packet, Dat, State, N ) ->
     Buffer = get_buffer( Dat ),
     case distress_cmsg:decode( Packet, Buffer ) of
-        {ok, Msg, NextBuff} ->  
+        {ok, Msg, NextBuff} ->
             case clean_keyval( Msg ) of
-                {error, R} -> 
+                {error, R} ->
                     send( Dat, distress_cmsg:encode_err(R)),
                     {ok, set_buffer(Dat, NextBuff), N};
                 Pair ->
                     add_block( Pair, State ),
                     send( Dat, distress_cmsg:encode_scs() ),
                     handle_msg_add_block( <<>>,
-                                          set_buffer(Dat, NextBuff), 
-                                          State, 
+                                          set_buffer(Dat, NextBuff),
+                                          State,
                                           N+1)
             end;
         {get,NextBuff} -> {get, set_buffer( Dat, NextBuff ), N}
     end.
- 
+
 add_block( {Key, Block} = BlockPair, {Magic, Expires} ) ->
     {MyMagic, _Pass} = Magic( BlockPair ),
     %LATER: Broadcast adds into P2P Overlay for replication with Pass as magic.
@@ -215,11 +215,11 @@ gen_magic( Oid, true ) ->
 do_del( Msg, Dat ) ->
     case clean_del( Msg ) of
         {error, Err} -> send( Dat, distress_cmsg:encode_err( Err ) );
-        {Oid, Key} ->         
+        {Oid, Key} ->
             (case del_block( Oid, Key ) of
-                {error, R} -> 
+                {error, R} ->
                      send( Dat, distress_cmsg:encode_err( R ) );
-                _ -> 
+                _ ->
                      ?DEBUG("Successful Del of ~p",[Key])
             end)
     end.
@@ -232,8 +232,8 @@ del_block( Oid, Key ) ->
     end.
 
 %% @hidden
-%% @doc Clean the delete messages in normal packet mode. 
-clean_del( Msg ) -> 
+%% @doc Clean the delete messages in normal packet mode.
+clean_del( Msg ) ->
     case distress_cmsg:get_value( Msg, key ) of
         undefined ->
             ?DEBUG("Del message missing 'key' value: ~p",[Msg]);
@@ -246,8 +246,8 @@ clean_del( Msg ) ->
     end.
 
 %% @hidden
-%% @doc Clean the block messages in a add-block mode. See 
-%%  handle_loop_add_block/3. 
+%% @doc Clean the block messages in a add-block mode. See
+%%  handle_loop_add_block/3.
 clean_keyval( {error, _Err} = Err) ->
     ?DEBUG( "Add_packet message invalid: ~p",[_Err] ), Err;
 clean_keyval( Msg ) ->

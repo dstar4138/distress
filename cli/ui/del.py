@@ -4,7 +4,7 @@ you have access to remove it. See 'add' command for more information. Note that
 if the file has been set to expire only, then there is no way for a forcable
 removal.
 
-Usage: 
+Usage:
     distress del [options] <nameid>...
 
 Options:
@@ -16,7 +16,7 @@ from api.distress_API import delete_file
 
 def delete(socket, args, config, library, cmd=False):
     """ Handles user input to remove a file or set of files from the selected
-        DISTRESS network. This functionality can all be overriden via the 
+        DISTRESS network. This functionality can all be overriden via the
         configuration file.
     """
     files=args['<nameid>']
@@ -41,9 +41,9 @@ def delete(socket, args, config, library, cmd=False):
 
             if cmd: print "Deletion succeeded!"
         elif cmd: print "Deletion failed!"
-        
+
     # Return Success.
-    return True 
+    return True
 
 if __name__ == '__main__':
     (socket, args, config, library) = build_cmd_args( __doc__ )
