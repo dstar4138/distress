@@ -7,7 +7,6 @@ The most commonly used commands are:
     del     remove file from network
     get     retrieve file
     list    list all local reciepts
-    info    view information about file
     import  import reciept file locally
     export  export reciept for others
     verify  verify a reciept-file relation
