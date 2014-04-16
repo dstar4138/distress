@@ -7,7 +7,6 @@ The most commonly used commands are:
     del     remove file from network
     get     retrieve file
     list    list all local reciepts
-    info    view information about file
     import  import reciept file locally
     export  export reciept for others
     verify  verify a reciept-file relation
@@ -39,6 +38,6 @@ if __name__ == '__main__':
 
         exit (call ([PYTHON_EXEC, dmod] + argv))
     except IOError as err:
-        exit("%r is not a valid command. See '%s help'." %
+        exit("%r is not a valid command. See '%s --help'." %
                                             (args['<command>'], sys.argv[0]))
 
