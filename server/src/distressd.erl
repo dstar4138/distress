@@ -11,7 +11,7 @@
 
 %% Public API
 -export([start/0, start/1, stop/0]).
--export([get_myid/0]).
+-export([get_myid/0,purge/0]).
 
 -define(DEFAULT_CONFIG, []).
 
@@ -30,6 +30,13 @@ get_myid() ->
         {my_id, ID} -> ID;
         Err -> Err
     end.
+
+%% @doc Purge's the block table from memory and disk. Useful for testing.
+purge() ->
+    io:format("Deleting all blocks!"),
+    catch mnesia:clear_table(t_block),
+    io:format("  Done!~n").
+
 
 %%%===================================================================
 %%% Internal functions
