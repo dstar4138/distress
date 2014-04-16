@@ -12,8 +12,6 @@ import distress_receipt
 import time
 import threading
 
-from Queue import Queue
-
 # REQUIRES PyCrypto 2.6 or later
 # PyCrypto can be found at https://www.dlitz.net/software/pycrypto/
 from Crypto.Cipher import AES
@@ -47,10 +45,10 @@ def encrypt_file(socket, library, filename, key,
 
     # 4b) At this point we consolidate the encrypted blocks if there are
     #     duplicate plaintext hashes. This is rare!
-    packet, salts = __purify( plaintext_hashes,
-                                plaintext_hashes_shuffled,
-                                encrypted_blocks,
-                                salts )
+    packet,pure_spth,pure_salts = __purify( plaintext_hashes,
+                                            plaintext_hashes_shuffled,
+                                            encrypted_blocks,
+                                            salts )
     if cmd and len(packet)<len(blocks): print "Compressing duplicate blocks..."
 
     # 5) Send the encrypted blocks with a random plaintext hash as it's key.
@@ -60,8 +58,7 @@ def encrypt_file(socket, library, filename, key,
     #    The shuffled hashes still designate order of the encrypted blocks on
     #    our side.
     if cmd: print "Saving Receipt to local disk..."
-    return library.make_receipt( filename, plaintext_hashes_shuffled,
-                                    salts, oid, key )
+    return library.make_receipt( filename, pure_spth, pure_salts, oid, key )
 
 
 def __purify(pths, spths, blocks, salts):
@@ -73,12 +70,13 @@ def __purify(pths, spths, blocks, salts):
     """
     seen,packet,nl = {}, [], []
     keyvals = zip(spths,blocks)
-    for pth,kv,s in zip(pths,keyvals,salts):
+    for pth,kv,spth,s in zip(pths,keyvals,spths,salts):
         if not pth in seen:
-            seen[pth] = s
+            seen[pth] = (spth,s)
             packet.append( kv )
         nl.append( seen[pth] )
-    return packet,nl
+    ph,ps=list(zip(*nl))
+    return packet,ph,ps
 
 
 def __chunk(file_path):
@@ -147,15 +145,15 @@ def __send_add(socket, packet, expires, removable, cmd=False):
     oid = response['oid'] if removable else None
 
     # send the key/value pairs for each chunk
+    socket.setblocking( 1 )
     i=24
     if cmd: sys.stdout.write("Sending blocks to server")
     for key,block in packet:
         send_message = distress_cmsg.addblock(key,block)
-        buff += send_message
-        while len(buff)>0:
-            t = socket.send( buff )
-            if t == 0: raise IOError("Socket closed unexpectedly")
-            buff = buff[t:]
+        while len(send_message) > 0:
+            b = socket.send( send_message )
+            send_message = send_message[b:]
+            time.sleep( 0.2 )
         if cmd:
             sys.stdout.write('.');sys.stdout.flush()
             i=i+1 if i<79 else 0 # dot it over to 80 chars, then newline.

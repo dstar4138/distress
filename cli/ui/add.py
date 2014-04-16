@@ -109,6 +109,7 @@ def add(socket, args, config, library, cmd=False):
                 if cmd: print receipt.get_filename()+" added!"
                 else: ret.append( receipt )
             except IOError as err:
+                print err
                 print "Error: file '" + filename + "' is not readable"
 
     except Exception as e: print e
