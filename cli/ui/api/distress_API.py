@@ -253,7 +253,7 @@ def recieve(socket, receipt, file_location, override_missing=False):
                     value,hashkey = msg['val'],msg['key']
                     if value == 'missing':
                         if override_missing:
-                            missed.insert( hashkey )
+                            missed.append( hashkey )
                             print "A Chunk of this object wasn't found in DISTRESS!"
                         else: raise Exception('The chunk was not in the network!')
                     else: # Add value to buffer.
