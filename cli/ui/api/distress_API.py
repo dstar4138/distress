@@ -12,6 +12,8 @@ import distress_receipt
 import time
 import threading
 
+from Queue import Queue
+
 # REQUIRES PyCrypto 2.6 or later
 # PyCrypto can be found at https://www.dlitz.net/software/pycrypto/
 from Crypto.Cipher import AES
@@ -144,18 +146,34 @@ def __send_add(socket, packet, expires, removable, cmd=False):
     assert(response['msg'] == 'ack')
     oid = response['oid'] if removable else None
 
-    # send the key/value pairs for each chunk
-    i=24
-    if cmd: sys.stdout.write("Sending blocks to server")
-    for key,block in packet:
-        send_message = distress_cmsg.addblock(key,block)
-        socket.send( send_message )
-        #__recvall(socket) #hang for a bit to get the go ahead
-        if cmd:
-            sys.stdout.write('.');sys.stdout.flush()
-            i=i+1 if i<79 else 0 # dot it over to 80 chars, then newline.
-            if i == 0 : print ""
-    if cmd: print ""
+    #BLOCK BUFFER
+    blockbuff = Queue()
+    fin = False
+    def send_buff():
+        buff = ""
+        while not fin and not blockbuff.empty():
+            buff += blockbuff.get()
+            while len(buff) > 0:
+                t = socket.send( buff )
+                if t == 0: raise IOError("Socket closed unexpectedly")
+                buff = buff[t:]
+    sender = threading.Thread(target=send_buff)
+    try:
+        sender.start()
+        # send the key/value pairs for each chunk
+        i=24
+        if cmd: sys.stdout.write("Sending blocks to server")
+        for key,block in packet:
+            send_message = distress_cmsg.addblock(key,block)
+            blockbuff.put( send_message )
+            if cmd:
+                sys.stdout.write('.');sys.stdout.flush()
+                i=i+1 if i<79 else 0 # dot it over to 80 chars, then newline.
+                if i == 0 : print ""
+        if cmd: print ""
+    finally:
+        fin = True
+        sender.join()
 
     return oid
 
