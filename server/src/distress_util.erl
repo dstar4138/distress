@@ -34,7 +34,7 @@ get_rootdir() ->
 hash( Type, Value ) ->
     case erlang:function_exported( crypto, hash, 2 ) of
         true  -> crypto:hash( Type, Value );
-        false -> erlang:apply( crypto, Type, Value )
+        false -> erlang:apply( crypto, Type, [ Value ] )
     end. 
 
 %% ===========================================================================
