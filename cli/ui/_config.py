@@ -18,9 +18,7 @@ DEFAULT_CONFIGSPEC =                         \
       'network' :                            \
             { 'hostip' : '127.0.0.1',        \
               'hostport' : 65501             \
-            },                               \
-      'global' :                             \
-            { 'key' : '' }                   \
+            }
     }
 
 def build_cmd_args( doc, conn=True ):

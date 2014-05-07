@@ -31,7 +31,7 @@ TIMEOUT Formatting:
 from os import path, walk
 
 from _config import build_cmd_args
-from api.distress_API import encrypt_file
+from api.distress_API import encrypt_file, random_key
 from email.utils import parsedate_tz, mktime_tz
 
 def determine_filepaths( args ):
@@ -57,7 +57,7 @@ def determine_key( args, config ):
     """ Check if the user provided an override key, otherwise we'll default to
         the global key stored in the configuration.
     """
-    return args['--key'] if args['--key'] else config['global']['key']
+    return args['--key'] if args['--key'] else random_key()
 
 def determine_expires( args ):
     """ Expires defaults to infinity if not provided. It can be overridden using

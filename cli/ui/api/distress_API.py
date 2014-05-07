@@ -22,6 +22,12 @@ DEBUG = False
 BLOCK_SIZE = 16  # Size of AES block cipher
 CHUNK_SIZE = 1024 # Size of chunk we read from file and store on DISTRESS
 
+def random_key():
+    """ Generates a random Key for encrypting the file. This key is used only
+    if not overridden by the `--key' parameter of the command.
+    """
+    return os.urandom( 32 ) # AES-256, requires 32 byte key.
+
 def encrypt_file(socket, library, filename, key,
                  expires="infinity", removable=False, cmd=False):
     """
@@ -108,7 +114,9 @@ def __SHA384(object):
 
 def __pad(s):
     """ Pad the chunks and keys to a multiple of the block size. """
-    x = BLOCK_SIZE-len(s)%BLOCK_SIZE
+    l=len(s)
+    if l>0 and l%BLOCK_SIZE==0: return s
+    x = BLOCK_SIZE-l%BLOCK_SIZE
     return s+x*chr(x)
 
 def __encrypt(block, salt, key):
