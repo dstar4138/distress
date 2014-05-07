@@ -1,2 +1,0 @@
-#!/bin/sh
-/usr/bin/erl -pa /home/darkstar/Coding/school/distress/server/ebin /home/darkstar/Coding/school/distress/server/deps/jsonx/ebin /home/darkstar/Coding/school/distress/server/deps/swarm/ebin -eval 'distressd:start().'
