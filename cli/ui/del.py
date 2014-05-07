@@ -34,7 +34,13 @@ def delete(socket, args, config, library, cmd=False):
             if not ignore: return False
             continue
 
-        if cmd: print "Deleting:", receipt.get_filename()
+        if cmd: print "Delete", receipt.get_filename(), "?"
+
+        response = raw_input("Are you sure? [y/N]")
+        if response.lower() not in ['yes','y']:
+            print "File was not deleted."
+            return False
+
         if delete_file( socket, receipt ):
             #Succeeded, so remove receipt from library
             library.remove_receipt( nameid )
