@@ -38,10 +38,10 @@ handle( Socket, _Name, Transport, _Info, Args ) ->
 %% @private
 %% @doc Magic value generation.
 f( Oid, Key, Value ) ->
-    HashedKey = crypto:hash( sha256, Key ), % Get Key to right length
+    HashedKey = distress_util:hash( sha256, Key ), % Get Key to right length
     S = crypto:aes_ctr_stream_init(HashedKey, Oid), % Generate cypher
     {_,Magic} = crypto:aes_ctr_stream_encrypt(S, Value), % Make Magic
-    crypto:hash( sha, Magic ).    % Compress encryption to CID length
+    distress_util:hash( sha, Magic ).    % Compress encryption to CID length
 
 %% @private
 %% @doc Magic value local masking.

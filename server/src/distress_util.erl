@@ -3,6 +3,7 @@
 %%% @author Alexander Dean
 -module(distress_util).
 
+-export([hash/2]).
 -export([uuid/0]).
 -export([clean_path/1,get_rootdir/0]).
 
@@ -28,6 +29,13 @@ get_rootdir() ->
         undefined -> ?DEFAULT_ROOT_DIR;
         {ok, Dir} -> Dir
     end.
+
+%% @doc Accomodate older versions without hash function.
+hash( Type, Value ) ->
+    case erlang:function_exported( crypto, hash, 2 ) of
+        true  -> crypto:hash( Type, Value );
+        false -> erlang:apply( crypto, Type, Value )
+    end. 
 
 %% ===========================================================================
 %% Private Functions
