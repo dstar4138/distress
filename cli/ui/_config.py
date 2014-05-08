@@ -2,8 +2,9 @@
 ## Private Local configuration setup for commands.
 ##
 __version__='0.1.0'
+from os import makedirs
 from socket import socket
-from os.path import expanduser,exists
+from os.path import dirname,expanduser,exists
 from ext.docopt import docopt
 from ext.configobj import ConfigObj
 from api.distress_receipt import Library
@@ -71,5 +72,6 @@ def _check_if_firstload():
     global DEFAULT_FILENAME
     __LOADED_CONFIG__.filename = DEFAULT_FILENAME
     if not exists( DEFAULT_FILENAME ):
+        makedirs( dirname( DEFAULT_FILENAME ) )
         __LOADED_CONFIG__.write()
 
