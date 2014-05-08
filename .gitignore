@@ -1,3 +1,4 @@
+server/distressd
 *.pyc
 __pycache__
 .eunit

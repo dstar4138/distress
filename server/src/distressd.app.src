@@ -10,7 +10,10 @@
         %{root_dir, "~/.config/distress"},
 
         % Override Database location
-        %{db_loc, "~/.config/distress/db"}
+        %{db_loc, "~/.config/distress/db"},
+
+        % Override Whitelist. Note, localhost is always valid.
+        {whitelist, []}
   ]}
  ]
 }.

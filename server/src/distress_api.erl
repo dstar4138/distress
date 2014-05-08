@@ -26,9 +26,12 @@ fun_desc() -> {?MODULE, handle, []}.
 
 
 %% @doc Start off the Handle loop.
-handle( Socket, _Name, Transport, _Info, Args ) ->
-    ?DEBUG("HANDLER STARTED: (~p,~p,~p,~p)",[Socket, _Name, Transport, _Info]),
-    handle_loop( {Socket, Transport, Args, <<>>} ).
+handle( Socket, _Name, Transport, Info, Args ) ->
+    ?DEBUG("HANDLER STARTED: (~p,~p,~p,~p)",[Socket, _Name, Transport, Info]),
+    case distress_conn:validate_connection( Info ) of
+        true -> handle_loop( {Socket, Transport, Args, <<>>} );
+        false -> ok
+    end.
 
 
 %%%===================================================================
