@@ -112,10 +112,10 @@ def __SHA384(object):
     object_hash.update(object)
     return object_hash.hexdigest()
 
-def __pad(s):
+def __pad(s,check=False):
     """ Pad the chunks and keys to a multiple of the block size. """
     l=len(s)
-    if l>0 and l%BLOCK_SIZE==0: return s
+    if check and l>0 and l%BLOCK_SIZE==0: return s
     x = BLOCK_SIZE-l%BLOCK_SIZE
     return s+x*chr(x)
 
@@ -123,7 +123,7 @@ def __encrypt(block, salt, key):
     """
     Encrypts the block using AES scheme and key.
     """
-    enc = AES.new(__pad(key), AES.MODE_OFB, salt) # initialize OFB with salt.
+    enc = AES.new(__pad(key,True), AES.MODE_OFB, salt) # initialize OFB with salt.
     return base64.b64encode( enc.encrypt( __pad( block ) ) )
 
 def __decrypt(block, salt, key):
@@ -131,7 +131,7 @@ def __decrypt(block, salt, key):
     Decrypts the block using AES scheme and key.
     """
     unpad = lambda s:s[0:-ord(s[-1])]
-    decr = AES.new( __pad(key), AES.MODE_OFB, salt ) # initialize OFB with salt.
+    decr = AES.new( __pad(key,True), AES.MODE_OFB, salt ) # initialize OFB with salt.
     return unpad( decr.decrypt( base64.b64decode( block ) ) )
 
 
