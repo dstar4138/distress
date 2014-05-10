@@ -5,7 +5,7 @@ import time
 import shutil
 import base64
 import tempfile
-from os import path
+from os import path,chmod
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 ## EXTENSIONS
@@ -125,6 +125,7 @@ class Library(object):
             with ZipFile( self.__path, mode='a', compression=ZIP_DEFLATED ) \
                 as ref:
                     ref.comment = Library.LIBRARY_REFERENCE
+            chmod( self.__path, 0600 )
         else:
             valid = False
             with ZipFile( self.__path, mode='r', compression=ZIP_DEFLATED ) \

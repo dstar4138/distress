@@ -2,7 +2,7 @@
 ## Private Local configuration setup for commands.
 ##
 __version__='0.1.0'
-from os import makedirs
+from os import makedirs,chmod
 from socket import socket
 from os.path import dirname,expanduser,exists
 from ext.docopt import docopt
@@ -72,6 +72,10 @@ def _check_if_firstload():
     global DEFAULT_FILENAME
     __LOADED_CONFIG__.filename = DEFAULT_FILENAME
     if not exists( DEFAULT_FILENAME ):
-        makedirs( dirname( DEFAULT_FILENAME ) )
+        try: makedirs( dirname( DEFAULT_FILENAME ) )
+        except OSError as e:
+            if e.errno == e.errno.EEXIST: pass #Ignore error if path exists
+            else: raise e
         __LOADED_CONFIG__.write()
+        chmod( DEFAULT_FILENAME, 0600 )
 
