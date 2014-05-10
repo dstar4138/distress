@@ -4,7 +4,6 @@
 %%%     of the DISTRESS database. Note the database does not do any encryption
 %%%     or decryption, all of that is client side.
 %%%
-%%% @author Alexander Dean
 -module(distress_db).
 
 %% General Debuggery

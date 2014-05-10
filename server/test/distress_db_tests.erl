@@ -1,6 +1,6 @@
+%%%
 %%% Database API Tests
 %%%
-%%% @author Alexander Dean
 -module(distress_db_tests).
 
 %% EUnit Libraries and definitions

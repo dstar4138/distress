@@ -5,7 +5,6 @@
 %%%     the future, it may be worth it to do more analysis of traffic to 
 %%%     prune particular poorly acting IPs, etc.
 %%%
-%%% @author Alexander Dean
 -module( distress_conn ).
 
 %% General Debuggery

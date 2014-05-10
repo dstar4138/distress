@@ -3,7 +3,6 @@
 %%%  Adds ease of use functions for interacting with a running
 %%%  DISTRESS service.
 %%%
-%%% @author Alexander Dean
 -module(distressd).
 
 %% General Debuggery

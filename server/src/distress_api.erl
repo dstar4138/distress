@@ -3,7 +3,6 @@
 %%%     This will take the decoded messages from the network and process
 %%%     them. There are three primary messages, Insert/Select/Delete.
 %%%
-%%% @author Alexander Dean
 -module( distress_api ).
 
 %% General Debuggery

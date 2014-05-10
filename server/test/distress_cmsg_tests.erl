@@ -1,6 +1,6 @@
+%%%
 %%% Client Messaging Tests
 %%%
-%%% @author Alexander Dean
 -module(distress_cmsg_tests).
 
 %% EUnit Libraries and definitions

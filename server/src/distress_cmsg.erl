@@ -3,7 +3,6 @@
 %%%     The Client messaging API encoding and decoding wrapper. Currently our
 %%%     protocol is implemented in JSON using the Erlang JSONx library.
 %%%
-%%% @author Alexander Dean
 -module( distress_cmsg ).
 
 -include("debug.hrl").

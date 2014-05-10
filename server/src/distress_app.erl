@@ -3,7 +3,6 @@
 %%% Starts the DISTRESS application in the Erlang VM and monitors the process
 %%% tree.
 %%%
-%%% @author Alexander Dean
 -module(distress_app).
 -behaviour(application).
 

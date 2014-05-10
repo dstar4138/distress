@@ -4,7 +4,6 @@
 %%%   installed) a simple database system wrapped around a TCP
 %%%   acceptor pool.
 %%%
-%%% @author Alexander Dean
 -module(distress_sup).
 
 %% Types

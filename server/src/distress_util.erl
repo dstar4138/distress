@@ -1,6 +1,6 @@
+%%%
 %%% Simple Utility module
 %%%
-%%% @author Alexander Dean
 -module(distress_util).
 
 -export([hash/2]).
