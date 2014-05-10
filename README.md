@@ -84,7 +84,7 @@ Usage: distress {start|stop|restart|reboot|ping|console|attach}
 Once started you can `attach` to the running service and treat it like an
 Erlang shell to send commands to it.
 
-## Contributing ## 
+## Contributing ##
 
 We welcome issue and bug reports, code patches, and documentation improvements.
 
